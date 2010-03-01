@@ -33,9 +33,11 @@ methods are documented here.
 
 =cut
 
-# Inside-out member vars and hand-rolled accessors.
+# Inside-out member vars
 my %term;
 my %field;
+my %regex;
+my %prefix;
 
 =head2 new( I<args> )
 
@@ -57,7 +59,40 @@ sub new {
         unless defined $field;
     $term{$$self}  = $term;
     $field{$$self} = $field;
+    $self->_build_regex($term);
     return $self;
+}
+
+sub _build_regex {
+    my ( $self, $term ) = @_;
+    $term = quotemeta($term);  # turn into a regexp that matches a literal str
+    $term =~ s/\\\*/.*/g;          # convert wildcards into regex
+    $term =~ s/\\\?/./g;           # convert wildcards into regex
+    $term =~ s/(?:\.\*){2,}/.*/g;  # eliminate multiple consecutive wild cards
+    $term =~ s/^/^/ unless $term =~ s/^\.\*//;    # anchor the regexp to
+    $term =~ s/\z/\\z/ unless $term =~ s/\.\*\z//;    # the ends of the term
+    $regex{$$self} = qr/$term/;
+
+    # get the literal prefix of the regexp, if any.
+    if ($regex{$$self} =~ m<^
+            (?:    # prefix for qr//'s, without allowing /i :
+                \(\? ([a-hj-z]*) (?:-[a-z]*)?:
+            )?
+            (\\[GA]|\^) # anchor
+            ([^#\$()*+.?[\]\\^]+) # literal pat (no metachars or comments)
+        >x
+        )
+    {
+        {
+            my ( $mod, $anchor, $prefix ) = ( $1 || '', $2, $3 );
+            $anchor eq '^' and $mod =~ /m/ and last;
+            for ($prefix) {
+                $mod =~ /x/ and s/\s+//g;
+            }
+            $prefix{$$self} = $prefix;
+        }
+    }
+
 }
 
 =head2 get_term
@@ -66,10 +101,21 @@ sub new {
 
 Retrieve the value set in new().
 
+=head2 get_regex
+
+Retrieve the qr// object representing I<term>.
+
+=head2 get_prefix
+
+Retrieve the literal string (if any) that prefixes the wildcards
+in I<term>.
+
 =cut
 
-sub get_term  { my $self = shift; return $term{$$self} }
-sub get_field { my $self = shift; return $field{$$self} }
+sub get_term   { my $self = shift; return $term{$$self} }
+sub get_field  { my $self = shift; return $field{$$self} }
+sub get_regex  { my $self = shift; return $regex{$$self} }
+sub get_prefix { my $self = shift; return $prefix{$$self} }
 
 sub DESTROY {
     my $self = shift;

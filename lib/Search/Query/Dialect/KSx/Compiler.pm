@@ -4,11 +4,13 @@ use warnings;
 use base qw( KinoSearch::Search::Compiler );
 use Carp;
 use Search::Query::Dialect::KSx::Scorer;
+use Data::Dump qw( dump );
 
 our $VERSION = '0.01';
 
 # inside out vars
 my %include;
+my ( %idf, %raw_impact, %terms, %query_norm_factor, %normalized_impact, );
 
 =head1 NAME
 
@@ -16,12 +18,12 @@ Search::Query::Dialect::KSx::Compiler - KinoSearch query extension
 
 =head1 SYNOPSIS
 
- # see KinoSearch::Search::Compiler
+    # see KinoSearch::Search::Compiler
 
 =head1 METHODS
 
-This class isa KinoSearch::Search::Compiler subclass.
-Only new or overridden methods are documented.
+This class isa KinoSearch::Search::Compiler subclass . Only new
+or overridden methods are documented .
 
 =cut
 
@@ -56,27 +58,35 @@ sub make_matcher {
         = $seg_reader->obtain("KinoSearch::Index::PostingListReader");
 
     # Acquire a Lexicon and seek it to our query string.
-    my $substring = $self->get_parent->get_query_string;
-    $substring =~ s/\*.\s*$//;
-    my $field = $self->get_parent->get_field;
+    my $term    = $self->get_parent->get_term;
+    my $regex   = $self->get_parent->get_regex;
+    my $field   = $self->get_parent->get_field;
+    my $prefix  = $self->get_parent->get_prefix;
     my $lexicon = $lex_reader->lexicon( field => $field );
     return unless $lexicon;
-    $lexicon->seek($substring);
+    $lexicon->seek( defined $prefix ? $prefix : '' );
 
     # Accumulate PostingLists for each matching term.
     my @posting_lists;
     my $include = $include{$$self};
-    while ( defined( my $term = $lexicon->get_term ) ) {
+    while ( defined( my $lex_term = $lexicon->get_term ) ) {
+
+        # weed out non-matchers early.
+        last if defined $prefix and index( $lex_term, $prefix ) != 0;
+
+        #carp "$term field:$field: term>$lex_term<";
         if ($include) {
-            last unless $term =~ m/^\Q$substring/;
+            next unless $lex_term =~ $regex;
         }
         else {
-            last if $term =~ m/^\Q$substring/;
+            last if $lex_term =~ $regex;
         }
         my $posting_list = $plist_reader->posting_list(
             field => $field,
-            term  => $term,
+            term  => $lex_term,
         );
+
+        #carp "check posting_list";
         if ($posting_list) {
             push @posting_lists, $posting_list;
         }
@@ -84,9 +94,48 @@ sub make_matcher {
     }
     return unless @posting_lists;
 
+    #carp dump \@posting_lists;
+
     return Search::Query::Dialect::KSx::Scorer->new(
-        posting_lists => \@posting_lists );
+        posting_lists => \@posting_lists,
+        compiler      => $self,
+    );
 }
+
+# TODO decipher this
+#sub perform_query_normalization {
+#
+#    # copied from KinoSearch::Search::Weight originally
+#    my ( $self, $searcher ) = @_;
+#    my $sim = $self->get_similarity;
+#
+#    my $factor = $self->sum_of_squared_weights;    # factor = ( tf_q * idf_t )
+#    $factor = $sim->query_norm($factor);           # factor /= norm_q
+#    $self->normalize($factor);                     # impact *= factor
+#}
+
+=head2 get_boost
+
+Returns the boost for the parent Query object.
+
+=cut
+
+sub get_boost { shift->get_parent->get_boost }
+
+# TODO decipher this
+#sub sum_of_squared_weights { my $self = shift; $raw_impact{$$self}**2 }
+
+# TODO decipher this
+#sub normalize {                                    # copied from TermQuery
+#    my ( $self, $query_norm_factor ) = @_;
+#    $query_norm_factor{$$self} = $query_norm_factor;
+#
+#    # Multiply raw impact by ( tf_q * idf_q / norm_q )
+#    #
+#    # Note: factoring in IDF a second time is correct.  See formula.
+#    $normalized_impact{$$self}
+#        = $raw_impact{$$self} * $idf{$$self} * $query_norm_factor;
+#}
 
 1;
 

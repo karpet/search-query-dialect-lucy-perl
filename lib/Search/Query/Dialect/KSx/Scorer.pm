@@ -7,9 +7,7 @@ use Carp;
 our $VERSION = '0.01';
 
 # Inside-out member vars.
-my %doc_ids;
-my %tally;
-my %tick;
+my ( %doc_ids, %pos, %boosts, %sim, %term_freqs );
 
 =head1 NAME
 
@@ -34,70 +32,72 @@ Returns a new Scorer object.
 
 sub new {
     my ( $class, %args ) = @_;
+
+    my $compiler      = delete $args{compiler};
+    my $reader        = delete $args{reader};
+    my $need_score    = delete $args{need_score};
     my $posting_lists = delete $args{posting_lists};
     my $self          = $class->SUPER::new(%args);
 
-    # Cheesy but simple way of interleaving PostingList doc sets.
-    my %all_doc_ids;
+    my %hits;    # The keys are the doc nums; the values the tfs.
     for my $posting_list (@$posting_lists) {
         while ( my $doc_id = $posting_list->next ) {
-            $all_doc_ids{$doc_id} = undef;
+            $hits{$doc_id} += $posting_list->get_doc_freq;
+
+            # TODO tf*weight ??
         }
     }
-    my @doc_ids = sort { $a <=> $b } keys %all_doc_ids;
-    $doc_ids{$$self} = \@doc_ids;
 
-    $tick{$$self}  = -1;
-    $tally{$$self} = KinoSearch::Search::Tally->new;
-    $tally{$$self}->set_score(1.0);    # fixed score of 1.0
+    $sim{$$self}        = $compiler->get_similarity;
+    $doc_ids{$$self}    = [ sort { $a <=> $b } keys %hits ];
+    $term_freqs{$$self} = \%hits;
+
+    $pos{$$self}    = -1;
+    $boosts{$$self} = $compiler->get_boost;
 
     return $self;
 }
 
-sub DESTROY {
-    my $self = shift;
-    delete $doc_ids{$$self};
-    delete $tick{$$self};
-    delete $tally{$$self};
-    $self->SUPER::DESTROY;
-}
-
 =head2 next
 
-Returns the next doc_id or 0.
+Returns the next doc_id.
 
 =cut
 
 sub next {
     my $self    = shift;
     my $doc_ids = $doc_ids{$$self};
-    my $tick    = ++$tick{$$self};
-    return 0 if $tick >= scalar @$doc_ids;
-    return $doc_ids->[$tick];
+    return 0 if $pos{$$self} >= $#$doc_ids;
+    return $doc_ids->[ ++$pos{$$self} ];
 }
 
 =head2 get_doc_id
 
-Returns a doc_id.
+Returns the doc_id for the current position.
 
 =cut
 
 sub get_doc_id {
     my $self    = shift;
-    my $tick    = $tick{$$self};
+    my $pos     = $pos{$$self};
     my $doc_ids = $doc_ids{$$self};
-    return $tick < scalar @$doc_ids ? $doc_ids->[$tick] : 0;
+    return $pos < scalar @$doc_ids ? $$doc_ids[$pos] : 0;
 }
 
-=head2 tally
+=head2 score
 
-Returns the tally for the Scorer (a KinoSearch::Search::Tally object).
+Returns the score of the hit.
 
 =cut
 
-sub tally {
-    my $self = shift;
-    return $tally{$$self};
+sub score {
+    my $self      = shift;
+    my $pos       = $pos{$$self};
+    my $doc_ids   = $doc_ids{$$self};
+    my $boost     = $boosts{$$self};
+    my $doc_id    = $$doc_ids[$pos];
+    my $term_freq = $term_freqs{$$self}->{$doc_id};
+    return $boost * $sim{$$self}->tf($term_freq);
 }
 
 1;

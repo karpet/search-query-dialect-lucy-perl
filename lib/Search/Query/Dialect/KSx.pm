@@ -5,6 +5,15 @@ use base qw( Search::Query::Dialect::Native );
 use Carp;
 use Data::Dump qw( dump );
 use Search::Query::Field::KSx;
+use KinoSearch::Search::ANDQuery;
+use KinoSearch::Search::NoMatchQuery;
+use KinoSearch::Search::NOTQuery;
+use KinoSearch::Search::ORQuery;
+use KinoSearch::Search::PhraseQuery;
+use KinoSearch::Search::RangeQuery;
+use KinoSearch::Search::TermQuery;
+use Search::Query::Dialect::KSx::NOTWildcardQuery;
+use Search::Query::Dialect::KSx::WildcardQuery;
 
 our $VERSION = '0.01';
 
@@ -23,10 +32,14 @@ Search::Query::Dialect::KSx - KinoSearch query dialect
 
  my $query = Search::Query->parser( dialect => 'KSx' )->parse('foo');
  print $query;
+ my $ks_query = $query->as_ks_query();
+ my $hits = $ks_searcher->hits( query => $ks_query );
 
 =head1 DESCRIPTION
 
-Search::Query::Dialect::KSx supports the KinoSearch::QueryParser syntax.
+Search::Query::Dialect::KSx extends the KinoSearch::QueryParser syntax
+to support wildcards, proximity and ranges, in addition to the standard
+Search::Query features.
 
 =head1 METHODS
 
@@ -148,7 +161,7 @@ sub stringify_clause {
     my @fields
         = $clause->{field}
         ? ( $clause->{field} )
-        : ( @{ $default_field ? @$default_field : [] } );
+        : ( defined $default_field ? @$default_field : () );
 
     # what value
     my $value
@@ -253,6 +266,185 @@ NAME: for my $name (@fields) {
           ( scalar(@buf) > 1 ? '(' : '' )
         . join( $joiner, @buf )
         . ( scalar(@buf) > 1 ? ')' : '' );
+}
+
+=head2 as_ks_query
+
+Returns the Dialect object as a KinoSearch::Search::Query-based object.
+The Dialect object is walked and converted to a 
+KinoSearch::Searcher-compatible tree.
+
+=cut
+
+sub as_ks_query {
+    my $self = shift;
+    my $tree = shift || $self;
+
+    my @q;
+    foreach my $prefix ( '+', '', '-' ) {
+        my @clauses;
+        my $joiner = $op_map{$prefix};
+        next unless exists $tree->{$prefix};
+        for my $clause ( @{ $tree->{$prefix} } ) {
+            push( @clauses, $self->_ks_clause( $clause, $prefix ) );
+        }
+        next if !@clauses;
+
+        my $ks_class = 'KinoSearch::Search::' . $joiner . 'Query';
+
+        push @q, @clauses == 1
+            ? $clauses[0]
+            : $ks_class->new( children => [ grep {defined} @clauses ] );
+    }
+
+    return @q == 1
+        ? $q[0]
+        : KinoSearch::Search::ANDQuery->new( children => \@q );
+}
+
+sub _ks_clause {
+    my $self   = shift;
+    my $clause = shift;
+    my $prefix = shift;
+
+    #warn dump $clause;
+    #warn "prefix = '$prefix'";
+
+    if ( $clause->{op} eq '()' ) {
+        return $self->as_ks_query( $clause->{value} );
+    }
+
+    # make sure we have a field
+    my $default_field = $self->default_field || $self->parser->default_field;
+    my @fields
+        = $clause->{field}
+        ? ( $clause->{field} )
+        : ( defined $default_field ? @$default_field : () );
+
+    # what value
+    my $value
+        = ref $clause->{value}
+        ? $clause->{value}
+        : $self->_doctor_value($clause);
+
+    # if we have no fields, we can't proceed, because KS
+    # requires a field for every term.
+    if ( !@fields ) {
+        croak
+            "No field specified for term '$value' -- set a default_field in Parser or Dialect";
+    }
+
+    my $wildcard = $self->wildcard;
+
+    # normalize operator
+    my $op = $clause->{op} || ":";
+    if ( $op eq '=' ) {
+        $op = ':';
+    }
+    if ( $prefix eq '-' ) {
+        $op = '!' . $op;
+    }
+    if ( $value =~ m/\%/ ) {
+        $op = $prefix eq '-' ? '!~' : '~';
+    }
+
+    my $quote = $clause->quote || '';
+
+    my @buf;
+NAME: for my $name (@fields) {
+        my $field = $self->_get_field($name);
+
+        if ( defined $field->callback ) {
+            push( @buf, $field->callback->( $field, $op, $value ) );
+            next NAME;
+        }
+
+        #warn dump [ $name, $op, $quote, $value ];
+
+        # invert fuzzy
+        if ( $op eq '!~' || ( $op eq '!:' and $value =~ m/[$wildcard\*\?]/ ) )
+        {
+            $value .= $wildcard unless $value =~ m/\Q$wildcard/;
+
+            push(
+                @buf,
+                Search::Query::Dialect::KSx::NOTWildcardQuery->new(
+                    field => $name,
+                    term  => $value,
+                )
+            );
+        }
+
+        # fuzzy
+        elsif ( $op eq '~'
+            || ( $op eq ':' and $value =~ m/[$wildcard\*\?]/ ) )
+        {
+            $value .= $wildcard unless $value =~ m/\Q$wildcard/;
+
+            push(
+                @buf,
+                Search::Query::Dialect::KSx::WildcardQuery->new(
+                    field => $name,
+                    term  => $value,
+                )
+            );
+        }
+
+        # invert
+        elsif ( $op eq '!:' ) {
+            push(
+                @buf,
+                KinoSearch::Search::NOTQuery->new(
+                    field => $name,
+                    term  => $value,
+                )
+            );
+        }
+
+        # range
+        elsif ( $op eq '..' ) {
+            if ( ref $value ne 'ARRAY' or @$value != 2 ) {
+                croak "range of values must be a 2-element ARRAY";
+            }
+
+            my $range_query = KinoSearch::Search::RangeQuery->new(
+                field         => $name,
+                lower_term    => $value->[0],
+                upper_term    => $value->[1],
+                include_lower => 1,
+                include_upper => 1,
+            );
+
+            push( @buf, $range_query );
+
+        }
+
+        # invert range
+        elsif ( $op eq '!..' ) {
+            if ( ref $value ne 'ARRAY' or @$value != 2 ) {
+                croak "range of values must be a 2-element ARRAY";
+            }
+
+            croak "NOT Range query not yet supported";
+        }
+
+        # standard
+        else {
+            push(
+                @buf,
+                KinoSearch::Search::TermQuery->new(
+                    field => $name,
+                    term  => $value,
+                )
+            );
+        }
+    }
+    if ( @buf == 1 ) {
+        return $buf[0];
+    }
+    my $joiner = $prefix eq '-' ? 'AND' : 'OR';
+    my $ks_class = 'KinoSearch::Search::' . $joiner . 'Query';
+    return $ks_class->new( children => \@buf );
 }
 
 =head2 field_class

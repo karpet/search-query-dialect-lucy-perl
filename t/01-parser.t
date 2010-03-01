@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 47;
+use Test::More tests => 53;
 use Data::Dump qw( dump );
 
 use_ok('Search::Query::Parser');
@@ -21,6 +21,10 @@ ok( my $parser = Search::Query::Parser->new(
 ok( my $query1 = $parser->parse('foo=bar'), "query1" );
 
 is( $query1, qq/foo:bar/, "query1 string" );
+
+ok( my $ks_query1 = $query1->as_ks_query(), "as_ks_query" );
+ok( $ks_query1->isa('KinoSearch::Search::TermQuery'),
+    "ks_query isa TermQuery" );
 
 ok( my $query2 = $parser->parse('foo:bar'), "query2" );
 
@@ -180,3 +184,15 @@ ok( my $query_alias_for2 = $parser_alias_for->parse('foo'),
     "parse alias_for with no default field and no field specified"
 );
 is( $query_alias_for2, qq/foo/, "query expanded omits aliases" );
+
+# wildcards
+ok( my $fuzzy_parser = Search::Query->parser(
+        dialect          => 'KSx',
+        query_class_opts => { default_field => 'field1' }
+    ),
+    "new fuzzy parser"
+);
+ok( my $fuzzy_query = $fuzzy_parser->parse('foo*'), "parse foo*" );
+ok( my $fuzzy_ks    = $fuzzy_query->as_ks_query,    "fuzzy as_ks_query" );
+is( $fuzzy_ks->to_string, $fuzzy_query->stringify,
+    "stringification matches" );

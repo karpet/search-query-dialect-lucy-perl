@@ -2,8 +2,9 @@ package Search::Query::Field::KSx;
 use strict;
 use warnings;
 use base qw( Search::Query::Field );
+use Scalar::Util qw( blessed );
 
-__PACKAGE__->mk_accessors(qw( type is_int ));
+__PACKAGE__->mk_accessors(qw( type is_int analyzer ));
 
 our $VERSION = '0.01';
 
@@ -36,11 +37,16 @@ Available params are also standard attribute accessor methods.
 
 =item type
 
-The column type.a
+The column type. This may be a KinoSearch::FieldType object
+or a simple string.
 
 =item is_int
 
 Set if C<type> matches m/int|num|date/.
+
+=item analyzer
+
+Set to a KinoSearch::Analysis::Analyzer-based object (optional).
 
 =back
 
@@ -53,7 +59,7 @@ sub init {
     $self->{type} ||= 'char';
 
     # numeric types
-    if ( $self->{type} =~ m/int|date|num/ ) {
+    if ( !blessed( $self->{type} ) && $self->{type} =~ m/int|date|num/ ) {
         $self->{is_int} = 1;
     }
 

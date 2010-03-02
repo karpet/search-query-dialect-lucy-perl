@@ -4,6 +4,7 @@ use warnings;
 use base qw( Search::Query::Dialect::Native );
 use Carp;
 use Data::Dump qw( dump );
+use Scalar::Util qw( blessed );
 use Search::Query::Field::KSx;
 use KinoSearch::Search::ANDQuery;
 use KinoSearch::Search::NoMatchQuery;
@@ -121,12 +122,8 @@ sub _doctor_value {
     my $value = $clause->{value};
 
     if ( $self->fuzzify ) {
-        $value .= '*' unless $value =~ m/[\*\%]/;
+        $value .= '*' unless $value =~ m/[\*]/;
     }
-
-    # normalize wildcard
-    my $wildcard = $self->wildcard;
-    $value =~ s/[\*\%]/$wildcard/g;
 
     return $value;
 }
@@ -349,60 +346,21 @@ sub _ks_clause {
     }
 
     my $quote = $clause->quote || '';
+    my $is_phrase = $quote eq '"' ? 1 : 0;
 
     my @buf;
-NAME: for my $name (@fields) {
+FIELD: for my $name (@fields) {
         my $field = $self->_get_field($name);
 
         if ( defined $field->callback ) {
             push( @buf, $field->callback->( $field, $op, $value ) );
-            next NAME;
+            next FIELD;
         }
 
         #warn dump [ $name, $op, $quote, $value ];
 
-        # invert fuzzy
-        if ( $op eq '!~' || ( $op eq '!:' and $value =~ m/[$wildcard\*\?]/ ) )
-        {
-            $value .= $wildcard unless $value =~ m/\Q$wildcard/;
-
-            push(
-                @buf,
-                Search::Query::Dialect::KSx::NOTWildcardQuery->new(
-                    field => $name,
-                    term  => $value,
-                )
-            );
-        }
-
-        # fuzzy
-        elsif ( $op eq '~'
-            || ( $op eq ':' and $value =~ m/[$wildcard\*\?]/ ) )
-        {
-            $value .= $wildcard unless $value =~ m/\Q$wildcard/;
-
-            push(
-                @buf,
-                Search::Query::Dialect::KSx::WildcardQuery->new(
-                    field => $name,
-                    term  => $value,
-                )
-            );
-        }
-
-        # invert
-        elsif ( $op eq '!:' ) {
-            push(
-                @buf,
-                KinoSearch::Search::NOTQuery->new(
-                    field => $name,
-                    term  => $value,
-                )
-            );
-        }
-
-        # range
-        elsif ( $op eq '..' ) {
+        # range is un-analyzed
+        if ( $op eq '..' ) {
             if ( ref $value ne 'ARRAY' or @$value != 2 ) {
                 croak "range of values must be a 2-element ARRAY";
             }
@@ -416,6 +374,7 @@ NAME: for my $name (@fields) {
             );
 
             push( @buf, $range_query );
+            next FIELD;
 
         }
 
@@ -426,18 +385,131 @@ NAME: for my $name (@fields) {
             }
 
             croak "NOT Range query not yet supported";
+            next FIELD;    # haha. never get here.
         }
 
-        # standard
-        else {
+        $self->debug and warn "value before:$value";
+        my @values = ($value);
+
+        # if the field has an analyzer, use it on $value
+        if ( blessed( $field->analyzer ) && !ref $value ) {
+
+            # preserve any wildcards
+            if ( $value =~ m/[$wildcard\*\?]/ ) {
+
+                # assume CaseFolder
+                $value = lc($value);
+
+                # split on whitespace, not token regex
+                my @tok = split( m/\s+/, $value );
+
+                # if stemmer, apply only to prefix if at all.
+                my $stemmer;
+                if ($field->analyzer->isa(
+                        'KinoSearch::Analysis::PolyAnalyzer')
+                    )
+                {
+
+    # KS currently broken with no get_analyzers() method.
+    #                    my $analyzers = $field->analyzer->get_analyzers();
+    #                    for my $ana (@$analyzers) {
+    #                        if (   $ana->isa('KinoSearch::Analysis::Stemmer')
+    #                            or $ana->can('stem') )
+    #                        {
+    #                            $stemmer = $ana;
+    #                            last;
+    #                        }
+    #                    }
+                }
+                elsif ($field->analyzer->isa('KinoSearch::Analysis::Stemmer')
+                    or $field->analyzer->can('stem') )
+                {
+                    $stemmer = $field->analyzer;
+                }
+
+                if ($stemmer) {
+                    carp "found stemmer";
+                    for my $tok (@tok) {
+                        if ( $tok =~ m/^\w\*$/ ) {
+                            $tok = $stemmer->stem($tok);
+                        }
+                    }
+                }
+
+            }
+            else {
+                @values = grep { defined and length }
+                    @{ $field->analyzer->split($value) };
+            }
+        }
+
+        $self->debug and warn "value after :" . dump( \@values );
+
+        if ( $is_phrase or @values > 1 ) {
             push(
                 @buf,
-                KinoSearch::Search::TermQuery->new(
+                KinoSearch::Search::PhraseQuery->new(
                     field => $name,
-                    term  => $value,
+                    terms => \@values,
                 )
             );
         }
+        else {
+            my $term = $values[0];
+
+            # invert fuzzy
+            if ( $op eq '!~'
+                || ( $op eq '!:' and $term =~ m/[$wildcard\*\?]/ ) )
+            {
+                $term .= $wildcard unless $term =~ m/\Q$wildcard/;
+
+                push(
+                    @buf,
+                    Search::Query::Dialect::KSx::NOTWildcardQuery->new(
+                        field => $name,
+                        term  => $term,
+                    )
+                );
+            }
+
+            # fuzzy
+            elsif ( $op eq '~'
+                || ( $op eq ':' and $term =~ m/[$wildcard\*\?]/ ) )
+            {
+                $term .= $wildcard unless $term =~ m/\Q$wildcard/;
+
+                push(
+                    @buf,
+                    Search::Query::Dialect::KSx::WildcardQuery->new(
+                        field => $name,
+                        term  => $term,
+                    )
+                );
+            }
+
+            # invert
+            elsif ( $op eq '!:' ) {
+                push(
+                    @buf,
+                    KinoSearch::Search::NOTQuery->new(
+                        field => $name,
+                        term  => $term,
+                    )
+                );
+            }
+
+            # standard
+            else {
+                push(
+                    @buf,
+                    KinoSearch::Search::TermQuery->new(
+                        field => $name,
+                        term  => $term,
+                    )
+                );
+            }
+
+        }    # TERM
     }
     if ( @buf == 1 ) {
         return $buf[0];

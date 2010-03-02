@@ -2,13 +2,20 @@
 
 use strict;
 use warnings;
-use Test::More tests => 53;
+use Test::More tests => 54;
 use Data::Dump qw( dump );
+
+use KinoSearch::Analysis::PolyAnalyzer;
+my $analyzer = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en', );
 
 use_ok('Search::Query::Parser');
 
 ok( my $parser = Search::Query::Parser->new(
-        fields         => [qw( foo color name )],
+        fields => {
+            foo   => { analyzer => $analyzer },
+            color => { analyzer => $analyzer },
+            name  => { analyzer => $analyzer },
+        },
         default_field  => 'name',
         dialect        => 'KSx',
         croak_on_error => 1,
@@ -18,21 +25,22 @@ ok( my $parser = Search::Query::Parser->new(
 
 #dump $parser;
 
-ok( my $query1 = $parser->parse('foo=bar'), "query1" );
+ok( my $query1 = $parser->parse('foo=BAR'), "query1" );
 
-is( $query1, qq/foo:bar/, "query1 string" );
+is( $query1, qq/foo:BAR/, "query1 string" );
 
 ok( my $ks_query1 = $query1->as_ks_query(), "as_ks_query" );
 ok( $ks_query1->isa('KinoSearch::Search::TermQuery'),
     "ks_query isa TermQuery" );
+is( $ks_query1->to_string, "foo:bar", "KS query analyzer applied" );
 
-ok( my $query2 = $parser->parse('foo:bar'), "query2" );
+ok( my $query2 = $parser->parse('foo:BaR'), "query2" );
 
-is( $query2, qq/foo:bar/, "query2 string" );
+is( $query2, qq/foo:BaR/, "query2 string" );
 
-ok( my $query3 = $parser->parse('foo bar'), "query3" );
+ok( my $query3 = $parser->parse('FoO bar'), "query3" );
 
-is( $query3, qq/name:foo AND name:bar/, "query3 string" );
+is( $query3, qq/name:FoO AND name:bar/, "query3 string" );
 
 my $str = '-color:red (name:john OR foo:bar)';
 

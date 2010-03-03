@@ -410,31 +410,36 @@ FIELD: for my $name (@fields) {
                     )
                 {
 
-    # KS currently broken with no get_analyzers() method.
-    #                    my $analyzers = $field->analyzer->get_analyzers();
-    #                    for my $ana (@$analyzers) {
-    #                        if (   $ana->isa('KinoSearch::Analysis::Stemmer')
-    #                            or $ana->can('stem') )
-    #                        {
-    #                            $stemmer = $ana;
-    #                            last;
-    #                        }
-    #                    }
+                    # NOTE get_analyzers() not available in <=0.30_082
+                    # due to a bug in KS.
+                    # fixed in KS svn trunk as of r5884
+                    my $analyzers = $field->analyzer->get_analyzers();
+                    for my $ana (@$analyzers) {
+                        if ( $ana->isa('KinoSearch::Analysis::Stemmer') ) {
+                            $stemmer = $ana;
+                            last;
+                        }
+                    }
                 }
-                elsif ($field->analyzer->isa('KinoSearch::Analysis::Stemmer')
-                    or $field->analyzer->can('stem') )
+                elsif (
+                    $field->analyzer->isa('KinoSearch::Analysis::Stemmer') )
                 {
                     $stemmer = $field->analyzer;
                 }
 
                 if ($stemmer) {
-                    carp "found stemmer";
                     for my $tok (@tok) {
-                        if ( $tok =~ m/^\w\*$/ ) {
-                            $tok = $stemmer->stem($tok);
+                        if ( $tok =~ s/^(\w+)\*$/$1/ ) {
+                            my $stemmed = $stemmer->split($tok);
+
+                            # re-append the wildcard
+                            # TODO ever have multiple?
+                            $tok = $stemmed->[0] . '*';
                         }
                     }
                 }
+
+                @values = @tok;
 
             }
             else {

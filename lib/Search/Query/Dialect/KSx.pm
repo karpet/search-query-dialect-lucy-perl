@@ -155,6 +155,9 @@ sub stringify_clause {
 
     # make sure we have a field
     my $default_field = $self->default_field || $self->parser->default_field;
+    if ( defined $default_field and !ref($default_field) ) {
+        $default_field = [$default_field];
+    }
     my @fields
         = $clause->{field}
         ? ( $clause->{field} )

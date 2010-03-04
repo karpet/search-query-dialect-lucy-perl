@@ -3,3 +3,7 @@ Revision history for Search-Query-Dialect-KSx
 0.01    01 March 2010
         First version, released on an unsuspecting world.
 
+0.02    03 March 2010
+        * bump depedency on KS to 0.30_083 for support for
+          wildcard queries.
+

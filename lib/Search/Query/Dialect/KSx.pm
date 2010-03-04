@@ -16,7 +16,7 @@ use KinoSearch::Search::TermQuery;
 use Search::Query::Dialect::KSx::NOTWildcardQuery;
 use Search::Query::Dialect::KSx::WildcardQuery;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 __PACKAGE__->mk_accessors(
     qw(

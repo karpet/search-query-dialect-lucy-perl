@@ -4,11 +4,11 @@ use warnings;
 use base qw( Search::Query::Dialect::KSx::WildcardQuery );
 use Carp;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 NAME
 
-Search::Query::Dialect::KSx::NOTWildcardQUery - KinoSearch query extension
+Search::Query::Dialect::KSx::NOTWildcardQuery - KinoSearch query extension
 
 =head1 SYNOPSIS
 

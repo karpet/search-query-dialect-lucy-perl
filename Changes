@@ -7,3 +7,39 @@ Revision history for Search-Query-Dialect-KSx
         * bump depedency on KS to 0.30_083 for support for
           wildcard queries.
 
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+
+0.03    xxx
+        * POD fix in NOTWildcardQuery that caused cpan
+          to not link the .pm with the .pod
+

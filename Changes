@@ -10,36 +10,5 @@ Revision history for Search-Query-Dialect-KSx
 0.03    xxx
         * POD fix in NOTWildcardQuery that caused cpan
           to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
-
-0.03    xxx
-        * POD fix in NOTWildcardQuery that caused cpan
-          to not link the .pm with the .pod
+        * fix op bugs in stringify_clause()
 

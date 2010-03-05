@@ -12,3 +12,7 @@ Revision history for Search-Query-Dialect-KSx
           to not link the .pm with the .pod
         * fix op bugs in stringify_clause()
 
+0.04    04 March 2010
+        * fix bug when no default_field is defined in Dialect 
+          or Parser
+

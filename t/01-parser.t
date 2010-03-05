@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 54;
+use Test::More tests => 57;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -204,3 +204,9 @@ ok( my $fuzzy_query = $fuzzy_parser->parse('foo*'), "parse foo*" );
 ok( my $fuzzy_ks    = $fuzzy_query->as_ks_query,    "fuzzy as_ks_query" );
 is( $fuzzy_ks->to_string, $fuzzy_query->stringify,
     "stringification matches" );
+
+# no fields defined
+ok( my $nofields_parser = Search::Query->parser( dialect => 'KSx', ),
+    "nofields parser" );
+ok( my $nofields_query = $nofields_parser->parse('foo'), "parse nofields" );
+is( $nofields_query, "foo", "stringify nofields_query" );

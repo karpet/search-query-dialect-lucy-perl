@@ -4,7 +4,7 @@ use warnings;
 use base qw( KinoSearch::Search::Matcher );
 use Carp;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 # Inside-out member vars.
 my ( %doc_ids, %pos, %boosts, %sim, %term_freqs );
@@ -42,18 +42,16 @@ sub new {
     my %hits;    # The keys are the doc nums; the values the tfs.
     for my $posting_list (@$posting_lists) {
         while ( my $doc_id = $posting_list->next ) {
-            $hits{$doc_id} += $posting_list->get_doc_freq;
-
-            # TODO tf*weight ??
+            my $posting = $posting_list->get_posting;
+            $hits{$doc_id} += $posting->get_freq;
         }
     }
 
     $sim{$$self}        = $compiler->get_similarity;
     $doc_ids{$$self}    = [ sort { $a <=> $b } keys %hits ];
     $term_freqs{$$self} = \%hits;
-
-    $pos{$$self}    = -1;
-    $boosts{$$self} = $compiler->get_boost;
+    $pos{$$self}        = -1;
+    $boosts{$$self}     = $compiler->get_boost;
 
     return $self;
 }
@@ -97,7 +95,9 @@ sub score {
     my $boost     = $boosts{$$self};
     my $doc_id    = $$doc_ids[$pos];
     my $term_freq = $term_freqs{$$self}->{$doc_id};
-    return $boost * $sim{$$self}->tf($term_freq);
+
+    #carp "doc_id=$doc_id  term_freq=$term_freq  boost=$boost";
+    return ( $boost * $sim{$$self}->tf($term_freq) ) / 10;
 }
 
 1;

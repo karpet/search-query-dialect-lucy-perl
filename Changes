@@ -16,3 +16,5 @@ Revision history for Search-Query-Dialect-KSx
         * fix bug when no default_field is defined in Dialect 
           or Parser
 
+0.05    xxx
+        * refactor scoring via Compiler and Scorer.

@@ -6,11 +6,13 @@ use Carp;
 use Search::Query::Dialect::KSx::Scorer;
 use Data::Dump qw( dump );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 # inside out vars
-my %include;
-my ( %idf, %raw_impact, %terms, %query_norm_factor, %normalized_impact, );
+my (%include,           %searchable,        %idf,
+    %raw_impact,        %lex_terms,         %doc_freq,
+    %query_norm_factor, %normalized_impact, %term_freq
+);
 
 =head1 NAME
 
@@ -34,11 +36,13 @@ Returns a new Compiler object.
 =cut
 
 sub new {
-    my $class   = shift;
-    my %args    = @_;
-    my $include = delete $args{include} || 0;
-    my $self    = $class->SUPER::new(%args);
-    $include{$$self} = $include;
+    my $class      = shift;
+    my %args       = @_;
+    my $include    = delete $args{include} || 0;
+    my $searchable = $args{searchable} or croak "searchable required";
+    my $self       = $class->SUPER::new(%args);
+    $include{$$self}    = $include;
+    $searchable{$$self} = $searchable;
     return $self;
 }
 
@@ -50,7 +54,9 @@ Returns a Search::Query::Dialect::KSx::Scorer object.
 
 sub make_matcher {
     my ( $self, %args ) = @_;
+
     my $seg_reader = $args{reader};
+    my $searchable = $searchable{$$self};
 
     # Retrieve low-level components LexiconReader and PostingListReader.
     my $lex_reader = $seg_reader->obtain("KinoSearch::Index::LexiconReader");
@@ -58,16 +64,22 @@ sub make_matcher {
         = $seg_reader->obtain("KinoSearch::Index::PostingListReader");
 
     # Acquire a Lexicon and seek it to our query string.
-    my $term    = $self->get_parent->get_term;
-    my $regex   = $self->get_parent->get_regex;
-    my $field   = $self->get_parent->get_field;
-    my $prefix  = $self->get_parent->get_prefix;
+    my $parent  = $self->get_parent;
+    my $term    = $parent->get_term;
+    my $regex   = $parent->get_regex;
+    my $field   = $parent->get_field;
+    my $prefix  = $parent->get_prefix;
     my $lexicon = $lex_reader->lexicon( field => $field );
     return unless $lexicon;
+
+    # Retrieve the correct Similarity for the Query's field.
+    my $sim = $args{similarity} = $searchable->get_schema->fetch_sim($field);
+
     $lexicon->seek( defined $prefix ? $prefix : '' );
 
     # Accumulate PostingLists for each matching term.
     my @posting_lists;
+    my @lex_terms;
     my $include = $include{$$self};
     while ( defined( my $lex_term = $lexicon->get_term ) ) {
 
@@ -89,12 +101,31 @@ sub make_matcher {
         #carp "check posting_list";
         if ($posting_list) {
             push @posting_lists, $posting_list;
+            push @lex_terms,     $lex_term;
         }
         last unless $lexicon->next;
     }
     return unless @posting_lists;
 
+    $doc_freq{$$self}  = scalar(@posting_lists);
+    $lex_terms{$$self} = \@lex_terms;
+
     #carp dump \@posting_lists;
+
+    # Calculate and store the IDF
+    my $max_doc = $searchable->doc_max;
+    my $idf     = $idf{$$self}
+        = $max_doc
+        ? $searchable->get_schema->fetch_type($field)->get_boost
+        + log( $max_doc / ( 1 + $doc_freq{$$self} ) )
+        : $searchable->get_schema->fetch_type($field)->get_boost;
+
+    $raw_impact{$$self} = $idf * $parent->get_boost;
+
+    #carp "raw_impact{$$self}= $raw_impact{$$self}";
+
+    # make final preparations
+    $self->_perform_query_normalization($searchable);
 
     return Search::Query::Dialect::KSx::Scorer->new(
         posting_lists => \@posting_lists,
@@ -102,17 +133,64 @@ sub make_matcher {
     );
 }
 
-# TODO decipher this
-#sub perform_query_normalization {
-#
-#    # copied from KinoSearch::Search::Weight originally
-#    my ( $self, $searcher ) = @_;
-#    my $sim = $self->get_similarity;
-#
-#    my $factor = $self->sum_of_squared_weights;    # factor = ( tf_q * idf_t )
-#    $factor = $sim->query_norm($factor);           # factor /= norm_q
-#    $self->normalize($factor);                     # impact *= factor
-#}
+=head2 get_searchable
+
+Returns the Searchable object for this Compiler.
+
+=cut
+
+sub get_searchable {
+    my $self = shift;
+    return $searchable{$$self};
+}
+
+=head2 get_doc_freq
+
+Returns the document frequency for this Compiler.
+
+=cut
+
+sub get_doc_freq {
+    my $self = shift;
+    return $doc_freq{$$self};
+}
+
+=head2 get_lex_terms
+
+Returns array ref of the terms in the lexicon that matched.
+
+=cut
+
+sub get_lex_terms {
+    my $self = shift;
+    return $lex_terms{$$self};
+}
+
+sub _perform_query_normalization {
+
+    # copied from KinoSearch::Search::Weight originally
+    my ( $self, $searcher ) = @_;
+    my $sim    = $self->get_similarity;
+    my $factor = $self->sum_of_squared_weights;    # factor = ( tf_q * idf_t )
+    $factor = $sim->query_norm($factor);           # factor /= norm_q
+    $self->normalize($factor);                     # impact *= factor
+
+    #carp "normalize factor=$factor";
+}
+
+=head2 apply_norm_factor( I<factor> )
+
+Overrides base class. Currently just passes I<factor> on to parent method.
+
+=cut
+
+sub apply_norm_factor {
+    my ( $self, $factor ) = @_;
+
+    #carp "apply_norm_factor=$factor";
+
+    $self->SUPER::apply_norm_factor($factor);
+}
 
 =head2 get_boost
 
@@ -122,20 +200,38 @@ Returns the boost for the parent Query object.
 
 sub get_boost { shift->get_parent->get_boost }
 
-# TODO decipher this
-#sub sum_of_squared_weights { my $self = shift; $raw_impact{$$self}**2 }
+=head2 sum_of_squared_weights
 
-# TODO decipher this
-#sub normalize {                                    # copied from TermQuery
-#    my ( $self, $query_norm_factor ) = @_;
-#    $query_norm_factor{$$self} = $query_norm_factor;
-#
-#    # Multiply raw impact by ( tf_q * idf_q / norm_q )
-#    #
-#    # Note: factoring in IDF a second time is correct.  See formula.
-#    $normalized_impact{$$self}
-#        = $raw_impact{$$self} * $idf{$$self} * $query_norm_factor;
-#}
+Returns imact of term on score.
+
+=cut
+
+sub sum_of_squared_weights {
+
+    #carp "sum_of_squared_weights";
+    my $self = shift;
+    return exists $raw_impact{$$self} ? $raw_impact{$$self}**2 : '1.0';
+}
+
+=head2 normalize()
+
+Affects the score of the term. See KinoSearch::Search::Compiler.
+
+=cut
+
+sub normalize {    # copied from TermQuery
+    my ( $self, $query_norm_factor ) = @_;
+    $query_norm_factor{$$self} = $query_norm_factor;
+
+    # Multiply raw impact by ( tf_q * idf_q / norm_q )
+    #
+    # Note: factoring in IDF a second time is correct.  See formula.
+    $normalized_impact{$$self}
+        = $raw_impact{$$self} * $idf{$$self} * $query_norm_factor;
+
+    #carp "normalized_impact{$$self} = $normalized_impact{$$self}";
+    return $normalized_impact{$$self};
+}
 
 1;
 

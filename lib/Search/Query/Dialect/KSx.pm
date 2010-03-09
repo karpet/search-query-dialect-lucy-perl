@@ -222,16 +222,11 @@ NAME: for my $name (@fields) {
                 croak "range of values must be a 2-element ARRAY";
             }
 
-            # we support only numbers at this point
-            for my $v (@$value) {
-                if ( $v =~ m/\D/ ) {
-                    croak "non-numeric range values are not supported: $v";
-                }
-            }
-
-            my @range = ( $value->[0] .. $value->[1] );
-            push( @buf,
-                join( '', $name, ':', '(', join( ' OR ', @range ), ')' ) );
+            push(
+                @buf,
+                join( '',
+                    $name, ':', '(', $value->[0], '..', $value->[1], ')' )
+            );
 
         }
 
@@ -241,16 +236,10 @@ NAME: for my $name (@fields) {
                 croak "range of values must be a 2-element ARRAY";
             }
 
-            # we support only numbers at this point
-            for my $v (@$value) {
-                if ( $v =~ m/\D/ ) {
-                    croak "non-numeric range values are not supported: $v";
-                }
-            }
-
-            my @range = ( $value->[0] .. $value->[1] );
-            push( @buf,
-                join( '', '-', $name, ':', '( ', join( ' ', @range ), ' )' )
+            push(
+                @buf,
+                join( '',
+                    $name, '!:', '(', $value->[0], '..', $value->[1], ')' )
             );
         }
 

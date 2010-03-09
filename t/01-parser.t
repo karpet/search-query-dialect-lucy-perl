@@ -142,16 +142,13 @@ ok( my $range_query = $range_parser->parse("date=(1..10)"), "parse range" );
 
 #dump $range_query;
 
-is( $range_query,
-    qq/date:(1 OR 2 OR 3 OR 4 OR 5 OR 6 OR 7 OR 8 OR 9 OR 10)/,
-    "range expanded"
-);
+is( $range_query, qq/date:(1..10)/, "range expanded" );
 
 ok( my $range_not_query = $range_parser->parse("date!=( 1..3 )"),
     "parse !range" );
 
 #dump $range_not_query;
-is( $range_not_query, qq/-date:( 1 2 3 )/, "!range exanded" );
+is( $range_not_query, qq/date!:(1..3)/, "!range expanded" );
 
 # operators
 ok( my $or_pipe_query = $range_parser->parse("date:( 1 | 2 )"),

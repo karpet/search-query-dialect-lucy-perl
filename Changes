@@ -18,3 +18,7 @@ Revision history for Search-Query-Dialect-KSx
 
 0.05    xxx
         * refactor scoring via Compiler and Scorer.
+        * fix bugs with NOTQuery
+        * support NOTQuery around a RangeQuery
+        * preserve syntax of RangeQuerys on stringify()
+

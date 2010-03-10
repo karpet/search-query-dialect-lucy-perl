@@ -88,7 +88,7 @@ sub make_matcher {
 
         #carp "$term field:$field: term>$lex_term<";
         if ($include) {
-            next unless $lex_term =~ $regex;
+            last unless $lex_term =~ $regex;
         }
         else {
             last if $lex_term =~ $regex;

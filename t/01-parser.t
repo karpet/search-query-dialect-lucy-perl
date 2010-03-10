@@ -148,7 +148,7 @@ ok( my $range_not_query = $range_parser->parse("-(date=( 1..3 ))"),
     "parse !range" );
 
 #dump $range_not_query;
-is( $range_not_query, qq/NOT date:(1..3)/, "!range expanded" );
+is( $range_not_query, qq/NOT (date:(1..3))/, "!range expanded" );
 
 # operators
 ok( my $or_pipe_query = $range_parser->parse("date:( 1 | 2 )"),

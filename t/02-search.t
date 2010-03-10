@@ -2,7 +2,8 @@ use strict;
 use warnings;
 use Test::More tests => 15;
 use Data::Dump qw( dump );
-use File::Path qw( remove_tree make_path );
+use File::Temp qw( tempdir );
+my $invindex = tempdir( CLEANUP => 1 );
 
 use KinoSearch::Schema;
 use KinoSearch::FieldType::FullTextType;
@@ -17,7 +18,6 @@ my $fulltext = KinoSearch::FieldType::FullTextType->new(
 $schema->spec_field( name => 'title', type => $fulltext );
 $schema->spec_field( name => 'color', type => $fulltext );
 $schema->spec_field( name => 'date',  type => $fulltext );
-my $invindex = 't/index.test';
 
 my $indexer = KinoSearch::Indexer->new(
     index    => $invindex,
@@ -25,12 +25,6 @@ my $indexer = KinoSearch::Indexer->new(
     create   => 1,
     truncate => 1,
 );
-
-END {
-    unless ( $ENV{PERL_DEBUG} ) {
-        remove_tree($invindex);
-    }
-}
 
 use_ok('Search::Query::Parser');
 

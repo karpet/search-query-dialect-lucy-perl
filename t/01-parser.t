@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 57;
+use Test::More tests => 59;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -78,6 +78,15 @@ ok( my $parser3 = Search::Query::Parser->new(
 ok( my $query7 = $parser3->parse('green'), "query7" );
 
 is( $query7, qq/green/, "query7 string" );
+
+ok( my $gardenq = $parser3->parse('(garden) AND (-foo=(20100208..20100309))'),
+    "parse complex garden query with range"
+);
+
+is( $gardenq,
+    qq/garden AND (NOT foo:(20100208..20100309))/,
+    "parsed garden query"
+);
 
 ok( my $parser4 = Search::Query::Parser->new(
         fields         => [qw( foo )],

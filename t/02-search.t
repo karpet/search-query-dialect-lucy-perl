@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 17;
 use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
@@ -70,19 +70,21 @@ my $searcher = KinoSearch::Searcher->new( index => $invindex, );
 
 # search
 my %queries = (
-    'title:(i am)'                     => 3,
-    'title:("i am")'                   => 3,
-    'color:red'                        => 1,
-    'brown'                            => 1,
-    'date=(20100301..20100331)'        => 2,
-    'date!=(20100301..20100331)'       => 1,
-    '-date:(20100301..20100331)'       => 1,
-    'color:re*'                        => 1,
-    'color:re?'                        => 1,
-    'color:br?wn'                      => 1,
-    'color:*n'                         => 2,
-    'color!=red'                       => 2,
-    'not color=red and not title=doc2' => 1,
+    'title:(i am)'                        => 3,
+    'title:("i am")'                      => 3,
+    'color:red'                           => 1,
+    'brown'                               => 1,
+    'date=(20100301..20100331)'           => 2,
+    'date!=(20100301..20100331)'          => 1,
+    '-date:(20100301..20100331)'          => 1,
+    'am AND (-date=(20100301..20100331))' => 1,
+    'am AND (date=(20100301..20100331))'  => 2,
+    'color:re*'                           => 1,
+    'color:re?'                           => 1,
+    'color:br?wn'                         => 1,
+    'color:*n'                            => 2,
+    'color!=red'                          => 2,
+    'not color=red and not title=doc2'    => 1,
 );
 
 for my $str ( sort keys %queries ) {

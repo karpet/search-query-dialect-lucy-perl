@@ -21,4 +21,3 @@ Revision history for Search-Query-Dialect-KSx
         * fix bugs with NOTQuery
         * support NOTQuery around a RangeQuery
         * preserve syntax of RangeQuerys on stringify()
-

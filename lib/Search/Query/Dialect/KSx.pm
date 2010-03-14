@@ -93,7 +93,7 @@ Returns the Query object as a normalized string.
 my %op_map = (
     '+' => 'AND',
     ''  => 'OR',
-    '-' => 'AND',
+    '-' => 'NOT',
 );
 
 sub stringify {
@@ -139,12 +139,14 @@ sub stringify_clause {
     my $clause = shift;
     my $prefix = shift;
 
+    #warn '=' x 80;
     #warn dump $clause;
     #warn "prefix = '$prefix'";
 
     if ( $clause->{op} eq '()' ) {
         if ( $clause->has_children and $clause->has_children == 1 ) {
-            return $self->stringify( $clause->{value} );
+            return ( $prefix eq '-' ? 'NOT ' : '' )
+                . $self->stringify( $clause->{value} );
         }
         else {
             return

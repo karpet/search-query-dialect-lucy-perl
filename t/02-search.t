@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 17;
+use Test::More tests => 18;
 use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
@@ -85,6 +85,7 @@ my %queries = (
     'color:*n'                            => 2,
     'color!=red'                          => 2,
     'not color=red and not title=doc2'    => 1,
+    '"i doc1"~2'                          => 1,
 );
 
 for my $str ( sort keys %queries ) {

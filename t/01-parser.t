@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 59;
+use Test::More tests => 61;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -65,7 +65,7 @@ is( $query5, qq/joe OR smith/, "query5 string" );
 
 ok( my $query6 = $parser2->parse(qq/"joe smith"/), "query6" );
 
-is( $query6, qq/joe smith/, "query6 string" );
+is( $query6, qq/"joe smith"/, "query6 string" );
 
 ok( my $parser3 = Search::Query::Parser->new(
         fields         => [qw( foo bar )],
@@ -218,3 +218,8 @@ ok( my $nofields_parser = Search::Query->parser( dialect => 'KSx', ),
     "nofields parser" );
 ok( my $nofields_query = $nofields_parser->parse('foo'), "parse nofields" );
 is( $nofields_query, "foo", "stringify nofields_query" );
+
+# proximity
+ok( my $proximity = $nofields_parser->parse(qq/"foo bar"~5/),
+    "parse proximity phrase" );
+is( $proximity, qq/"foo bar"~5/, "stringify proximity" );

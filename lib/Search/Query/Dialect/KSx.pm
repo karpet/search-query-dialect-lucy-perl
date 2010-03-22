@@ -13,10 +13,11 @@ use KinoSearch::Search::ORQuery;
 use KinoSearch::Search::PhraseQuery;
 use KinoSearch::Search::RangeQuery;
 use KinoSearch::Search::TermQuery;
+use KSx::Search::ProximityQuery;
 use Search::Query::Dialect::KSx::NOTWildcardQuery;
 use Search::Query::Dialect::KSx::WildcardQuery;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -155,6 +156,12 @@ sub stringify_clause {
         }
     }
 
+    my $quote     = $clause->quote     || '';
+    my $proximity = $clause->proximity || '';
+    if ($proximity) {
+        $proximity = '~' . $proximity;
+    }
+
     # make sure we have a field
     my $default_field 
         = $self->default_field
@@ -171,8 +178,10 @@ sub stringify_clause {
         ? $clause->{value}
         : $self->_doctor_value($clause);
 
-    # if we have no fields, we're done
-    return $value unless @fields;
+    # if we have no fields, then operator is ignored.
+    if ( !@fields ) {
+        return qq/$quote$value$quote$proximity/;
+    }
 
     my $wildcard = $self->wildcard;
 
@@ -185,8 +194,6 @@ sub stringify_clause {
     if ( $value =~ m/[\*\?]|\Q$wildcard/ ) {
         $op =~ s/:/~/g;
     }
-
-    my $quote = $clause->quote || '';
 
     my @buf;
 NAME: for my $name (@fields) {
@@ -202,20 +209,27 @@ NAME: for my $name (@fields) {
         # invert fuzzy
         if ( $op eq '!~' ) {
             $value .= $wildcard unless $value =~ m/\Q$wildcard/;
-            push( @buf,
-                join( '', 'NOT ', $name, ':', qq/$quote$value$quote/ ) );
+            push(
+                @buf,
+                join( '',
+                    'NOT ', $name, ':', qq/$quote$value$quote$proximity/ )
+            );
         }
 
         # fuzzy
         elsif ( $op eq '~' ) {
             $value .= $wildcard unless $value =~ m/\Q$wildcard/;
-            push( @buf, join( '', $name, ':', qq/$quote$value$quote/ ) );
+            push( @buf,
+                join( '', $name, ':', qq/$quote$value$quote$proximity/ ) );
         }
 
         # invert
         elsif ( $op eq '!:' ) {
-            push( @buf,
-                join( '', 'NOT ', $name, ':', qq/$quote$value$quote/ ) );
+            push(
+                @buf,
+                join( '',
+                    'NOT ', $name, ':', qq/$quote$value$quote$proximity/ )
+            );
         }
 
         # range
@@ -247,7 +261,8 @@ NAME: for my $name (@fields) {
 
         # standard
         else {
-            push( @buf, join( '', $name, ':', qq/$quote$value$quote/ ) );
+            push( @buf,
+                join( '', $name, ':', qq/$quote$value$quote$proximity/ ) );
         }
     }
     my $joiner = $prefix eq '-' ? ' AND ' : ' OR ';
@@ -360,6 +375,7 @@ sub _ks_clause {
 
     my $quote = $clause->quote || '';
     my $is_phrase = $quote eq '"' ? 1 : 0;
+    my $proximity = $clause->proximity || '';
 
     my @buf;
 FIELD: for my $name (@fields) {
@@ -476,13 +492,25 @@ FIELD: for my $name (@fields) {
         $self->debug and warn "value after :" . dump( \@values );
 
         if ( $is_phrase or @values > 1 ) {
-            push(
-                @buf,
-                KinoSearch::Search::PhraseQuery->new(
-                    field => $name,
-                    terms => \@values,
-                )
-            );
+            if ($proximity) {
+                push(
+                    @buf,
+                    KSx::Search::ProximityQuery->new(
+                        field  => $name,
+                        terms  => \@values,
+                        within => $proximity,
+                    )
+                );
+            }
+            else {
+                push(
+                    @buf,
+                    KinoSearch::Search::PhraseQuery->new(
+                        field => $name,
+                        terms => \@values,
+                    )
+                );
+            }
         }
         else {
             my $term = $values[0];

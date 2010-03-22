@@ -39,8 +39,11 @@ sub new {
     my $class      = shift;
     my %args       = @_;
     my $include    = delete $args{include} || 0;
-    my $searchable = $args{searchable} or croak "searchable required";
-    my $self       = $class->SUPER::new(%args);
+    my $searchable = $args{searchable} || $args{searcher};
+    if ( !$searchable ) {
+        croak "searcher required";
+    }
+    my $self = $class->SUPER::new(%args);
     $include{$$self}    = $include;
     $searchable{$$self} = $searchable;
     return $self;

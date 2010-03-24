@@ -86,15 +86,24 @@ sub make_matcher {
     my $include = $include{$$self};
     while ( defined( my $lex_term = $lexicon->get_term ) ) {
 
+        #warn "lex_term=$lex_term prefix=$prefix";
+
         # weed out non-matchers early.
         last if defined $prefix and index( $lex_term, $prefix ) != 0;
 
         #carp "$term field:$field: term>$lex_term<";
+
         if ($include) {
-            last unless $lex_term =~ $regex;
+            unless ( $lex_term =~ $regex ) {
+                last unless $lexicon->next;
+                next;
+            }
         }
         else {
-            last if $lex_term =~ $regex;
+            if ( $lex_term =~ $regex ) {
+                last unless $lexicon->next;
+                next;
+            }
         }
         my $posting_list = $plist_reader->posting_list(
             field => $field,

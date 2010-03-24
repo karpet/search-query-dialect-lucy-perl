@@ -23,6 +23,7 @@ __PACKAGE__->mk_accessors(
     qw(
         wildcard
         fuzzify
+        ignore_order_in_proximity
         )
 );
 
@@ -65,6 +66,22 @@ Default is '*'.
 =item fuzzify
 
 If true, a wildcard is automatically appended to each query term.
+
+=item ignore_order_in_proximity
+
+If true, the terms in a proximity query will be evaluated for 
+matches regardless of the order in which they appear. For example,
+given a document excerpt like:
+
+ foo bar bing
+
+and a query like:
+
+ "bing foo"~5
+
+if ignore_order_in_proximity is true, the document would match.
+If ignore_order_in_proximity is false (the default), the document would
+not match.
 
 =back
 
@@ -493,14 +510,41 @@ FIELD: for my $name (@fields) {
 
         if ( $is_phrase or @values > 1 ) {
             if ($proximity) {
-                push(
-                    @buf,
-                    KSx::Search::ProximityQuery->new(
-                        field  => $name,
-                        terms  => \@values,
-                        within => $proximity,
-                    )
-                );
+
+                if ( $self->ignore_order_in_proximity ) {
+                    my $n_values = scalar @values;
+                    my @permutations;
+                    while ( $n_values-- > 0 ) {
+                        push(
+                            @permutations,
+                            KSx::Search::ProximityQuery->new(
+                                field  => $name,
+                                terms  => [@values],    # new array
+                                within => $proximity,
+                            )
+                        );
+                        push( @values, shift(@values) );    # shuffle
+
+                    }
+                    $self->debug
+                        and dump [ map { $_->get_terms } @permutations ];
+                    push(
+                        @buf,
+                        KinoSearch::Search::ORQuery->new(
+                            children => \@permutations,
+                        )
+                    );
+                }
+                else {
+                    push(
+                        @buf,
+                        KSx::Search::ProximityQuery->new(
+                            field  => $name,
+                            terms  => \@values,
+                            within => $proximity,
+                        )
+                    );
+                }
             }
             else {
                 push(

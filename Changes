@@ -25,4 +25,7 @@ Revision history for Search-Query-Dialect-KSx
 0.06    xxx
         * support KS 0.30_084 API change from 'searchable' to 'searcher'
         * add proximity support via KSx::Search::ProximityQuery
+        * fix bug in Compiler where multi-term fields were not being
+          checked correctly for wildcard matches.
+
 

@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 18;
+use Test::More tests => 20;
 use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
@@ -44,17 +44,17 @@ ok( my $parser = Search::Query::Parser->new(
 my %docs = (
     'doc1' => {
         title => 'i am doc1',
-        color => 'red',
+        color => 'red blue orange',
         date  => '20100329',
     },
     'doc2' => {
         title => 'i am doc2',
-        color => 'green',
+        color => 'green yellow purple',
         date  => '20100301',
     },
     'doc3' => {
         title => 'i am doc3',
-        color => 'brown',
+        color => 'brown black white',
         date  => '19720329',
     },
 );
@@ -110,3 +110,17 @@ for my $str ( sort keys %queries ) {
 
     }
 }
+
+# exercise some as_ks_query options
+my $query = $parser->parse(qq/"orange red"~3/);
+$query->ignore_order_in_proximity(1);
+
+#$query->debug(1);
+my $ks_query = $query->as_ks_query();
+my $hits
+    = $searcher->hits( query => $ks_query, offset => 0, num_wanted => 5 );
+is( $hits->total_hits, 1, "proximity order ignored" );
+$query->ignore_order_in_proximity(0);
+$ks_query = $query->as_ks_query();
+$hits = $searcher->hits( query => $ks_query, offset => 0, num_wanted => 5 );
+is( $hits->total_hits, 0, "proximity order respected" );

@@ -16,6 +16,22 @@ Search::Query::Dialect::KSx::NOTWildcardQuery - KinoSearch query extension
  my $ks_query = $query->as_ks_query();
  # $ks_query isa NOTWildcardQuery
 
+=head1 DESCRIPTION
+
+If a WildcardQuery is equivalent to this:
+
+ $term =~ m/$query/
+
+then a NOTWildcardQuery is equivalent to this:
+
+ $term !~ m/$query/
+
+B<Note> that the as_ks_query() method in Dialect::KSx does B<not> use
+this class but instead wraps a WildcardQuery in a NOTQuery, which allows
+for matching null values as well. So currently this class is not used
+by Search::Query::Dialect::KSx but is included here in case someone finds it 
+useful.
+
 =head1 METHODS
 
 This class isa Search::Query::Dialect::KSx::WildcardQuery subclass.

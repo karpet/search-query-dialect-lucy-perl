@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 20;
+use Test::More tests => 21;
 use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
@@ -15,9 +15,10 @@ my $fulltext = KinoSearch::FieldType::FullTextType->new(
     analyzer => $analyzer,
     sortable => 1,
 );
-$schema->spec_field( name => 'title', type => $fulltext );
-$schema->spec_field( name => 'color', type => $fulltext );
-$schema->spec_field( name => 'date',  type => $fulltext );
+$schema->spec_field( name => 'title',  type => $fulltext );
+$schema->spec_field( name => 'color',  type => $fulltext );
+$schema->spec_field( name => 'date',   type => $fulltext );
+$schema->spec_field( name => 'option', type => $fulltext );
 
 my $indexer = KinoSearch::Indexer->new(
     index    => $invindex,
@@ -30,32 +31,37 @@ use_ok('Search::Query::Parser');
 
 ok( my $parser = Search::Query::Parser->new(
         fields => {
-            title => { analyzer => $analyzer },
-            color => { analyzer => $analyzer },
-            date  => { analyzer => $analyzer },
+            title  => { analyzer => $analyzer },
+            color  => { analyzer => $analyzer },
+            date   => { analyzer => $analyzer },
+            option => { analyzer => $analyzer },
         },
-        query_class_opts => { default_field => [qw( title color date)], },
-        dialect          => 'KSx',
-        croak_on_error   => 1,
+        query_class_opts =>
+            { default_field => [qw( title color date option )], },
+        dialect        => 'KSx',
+        croak_on_error => 1,
     ),
     "new parser"
 );
 
 my %docs = (
     'doc1' => {
-        title => 'i am doc1',
-        color => 'red blue orange',
-        date  => '20100329',
+        title  => 'i am doc1',
+        color  => 'red blue orange',
+        date   => '20100329',
+        option => 'a',
     },
     'doc2' => {
-        title => 'i am doc2',
-        color => 'green yellow purple',
-        date  => '20100301',
+        title  => 'i am doc2',
+        color  => 'green yellow purple',
+        date   => '20100301',
+        option => 'b',
     },
     'doc3' => {
-        title => 'i am doc3',
-        color => 'brown black white',
-        date  => '19720329',
+        title  => 'i am doc3',
+        color  => 'brown black white',
+        date   => '19720329',
+        option => '',
     },
 );
 
@@ -86,10 +92,13 @@ my %queries = (
     'color!=red'                          => 2,
     'not color=red and not title=doc2'    => 1,
     '"i doc1"~2'                          => 1,
+    'option!=?*'                          => 1,
 );
 
 for my $str ( sort keys %queries ) {
     my $query = $parser->parse($str);
+
+    #$query->debug(1);
 
     #diag($query);
     my $hits = $searcher->hits(
@@ -102,10 +111,14 @@ for my $str ( sort keys %queries ) {
 
     if ( $hits->total_hits != $queries{$str} ) {
 
+        diag($str);
         diag($query);
         diag( dump($query) );
 
-        #diag( dump( $query->as_ks_query ) );
+        diag( dump( $query->as_ks_query ) );
+        if ( $query->as_ks_query->isa('KinoSearch::Search::NOTQuery') ) {
+            diag( dump( $query->as_ks_query->get_negated_query ) );
+        }
         diag( $query->as_ks_query->to_string );
 
     }

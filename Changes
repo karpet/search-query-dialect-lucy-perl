@@ -27,5 +27,6 @@ Revision history for Search-Query-Dialect-KSx
         * add proximity support via KSx::Search::ProximityQuery
         * fix bug in Compiler where multi-term fields were not being
           checked correctly for wildcard matches.
+        * fix bug in as_ks_query() where !~ was not being properly parsed.
 
 

@@ -197,6 +197,7 @@ sub stringify_clause {
 
     # if we have no fields, then operator is ignored.
     if ( !@fields ) {
+        $self->debug and warn "no fields for " . dump($clause);
         return qq/$quote$value$quote$proximity/;
     }
 
@@ -221,7 +222,9 @@ NAME: for my $name (@fields) {
             next NAME;
         }
 
-        #warn "ks string: " . dump [ $name, $op, $prefix, $quote, $value ];
+        $self->debug
+            and warn "ks string: "
+            . dump [ $name, $op, $prefix, $quote, $value ];
 
         # invert fuzzy
         if ( $op eq '!~' ) {
@@ -387,7 +390,7 @@ sub _ks_clause {
         $op = '!' . $op unless $op =~ m/^!/;
     }
     if ( $value =~ m/[\*\?]|\Q$wildcard/ ) {
-        $op = $prefix eq '-' ? '!~' : '~';
+        $op =~ s/:/~/;
     }
 
     my $quote = $clause->quote || '';
@@ -403,7 +406,9 @@ FIELD: for my $name (@fields) {
             next FIELD;
         }
 
-        #warn "as_ks_query: " . dump [ $name, $op, $prefix, $quote, $value ];
+        $self->debug
+            and warn "as_ks_query: "
+            . dump [ $name, $op, $prefix, $quote, $value ];
 
         # range is un-analyzed
         if ( $op eq '..' ) {
@@ -454,6 +459,9 @@ FIELD: for my $name (@fields) {
 
             # preserve any wildcards
             if ( $value =~ m/[$wildcard\*\?]/ ) {
+
+                # can't use full PolyAnalyzer since it will tokenize
+                # and strip the wildcards off.
 
                 # assume CaseFolder
                 $value = lc($value);
@@ -565,11 +573,22 @@ FIELD: for my $name (@fields) {
             {
                 $term .= $wildcard unless $term =~ m/\Q$wildcard/;
 
+                # instead of a NOTWildcardQuery, wrap the WildcardQuery
+                # in a NOTQuery. This is for matching things like:
+                #
+                #  somefield!=?*
+                #
+                # where a NOTWildcardQuery would naturally only look
+                # at terms that exist in the lexicon, and not terms
+                # that do not.
                 push(
                     @buf,
-                    Search::Query::Dialect::KSx::NOTWildcardQuery->new(
-                        field => $name,
-                        term  => $term,
+                    KinoSearch::Search::NOTQuery->new(
+                        negated_query =>
+                            Search::Query::Dialect::KSx::WildcardQuery->new(
+                            field => $name,
+                            term  => $term,
+                            )
                     )
                 );
             }

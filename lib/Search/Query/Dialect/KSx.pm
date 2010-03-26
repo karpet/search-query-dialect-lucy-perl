@@ -475,10 +475,6 @@ FIELD: for my $name (@fields) {
                         'KinoSearch::Analysis::PolyAnalyzer')
                     )
                 {
-
-                    # NOTE get_analyzers() not available in <=0.30_082
-                    # due to a bug in KS.
-                    # fixed in KS svn trunk as of r5884
                     my $analyzers = $field->analyzer->get_analyzers();
                     for my $ana (@$analyzers) {
                         if ( $ana->isa('KinoSearch::Analysis::Stemmer') ) {

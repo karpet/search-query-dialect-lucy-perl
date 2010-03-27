@@ -22,8 +22,8 @@ Revision history for Search-Query-Dialect-KSx
         * support NOTQuery around a RangeQuery
         * preserve syntax of RangeQuerys on stringify()
 
-0.06    xxx
-        * support KS 0.30_084 API change from 'searchable' to 'searcher'
+0.06    26 March 2010
+        * support KS 0.30_09 API change from 'searchable' to 'searcher'
         * add proximity support via KSx::Search::ProximityQuery
         * fix bug in Compiler where multi-term fields were not being
           checked correctly for wildcard matches.

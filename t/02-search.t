@@ -1,6 +1,7 @@
+#!/usr/bin/env perl
 use strict;
 use warnings;
-use Test::More tests => 21;
+use Test::More tests => 22;
 use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
@@ -93,6 +94,7 @@ my %queries = (
     'not color=red and not title=doc2'    => 1,
     '"i doc1"~2'                          => 1,
     'option!=?*'                          => 1,
+    'NOT option:?*'                       => 1,
 );
 
 for my $str ( sort keys %queries ) {
@@ -111,6 +113,7 @@ for my $str ( sort keys %queries ) {
 
     if ( $hits->total_hits != $queries{$str} ) {
 
+        $query->debug(1);
         diag($str);
         diag($query);
         diag( dump($query) );

@@ -17,7 +17,7 @@ use KSx::Search::ProximityQuery;
 use Search::Query::Dialect::KSx::NOTWildcardQuery;
 use Search::Query::Dialect::KSx::WildcardQuery;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -577,16 +577,32 @@ FIELD: for my $name (@fields) {
                 # where a NOTWildcardQuery would naturally only look
                 # at terms that exist in the lexicon, and not terms
                 # that do not.
-                push(
-                    @buf,
-                    KinoSearch::Search::NOTQuery->new(
-                        negated_query =>
-                            Search::Query::Dialect::KSx::WildcardQuery->new(
+                #
+
+                # if the prefix is already NOT do not apply a double negative
+                if ( $prefix eq '-' ) {
+                    push(
+                        @buf,
+                        Search::Query::Dialect::KSx::WildcardQuery->new(
                             field => $name,
                             term  => $term,
-                            )
-                    )
-                );
+                        )
+                    );
+                }
+                else {
+                    push(
+                        @buf,
+                        KinoSearch::Search::NOTQuery->new(
+                            negated_query =>
+                                Search::Query::Dialect::KSx::WildcardQuery
+                                ->new(
+                                field => $name,
+                                term  => $term,
+                                )
+                        )
+                    );
+
+                }
             }
 
             # fuzzy

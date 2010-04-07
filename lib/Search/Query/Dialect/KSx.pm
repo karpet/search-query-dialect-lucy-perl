@@ -17,7 +17,7 @@ use KSx::Search::ProximityQuery;
 use Search::Query::Dialect::KSx::NOTWildcardQuery;
 use Search::Query::Dialect::KSx::WildcardQuery;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -109,9 +109,9 @@ Returns the Query object as a normalized string.
 =cut
 
 my %op_map = (
-    '+' => 'AND',
-    ''  => 'OR',
-    '-' => 'NOT',
+    '+' => ' AND ',
+    ''  => ' OR ',
+    '-' => ' ',
 );
 
 sub stringify {
@@ -128,7 +128,7 @@ sub stringify {
         }
         next if !@clauses;
 
-        push @q, join( " $joiner ", grep { defined and length } @clauses );
+        push @q, join( $joiner, grep { defined and length } @clauses );
     }
 
     return join " AND ", @q;

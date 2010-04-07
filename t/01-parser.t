@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 65;
+use Test::More tests => 67;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -182,6 +182,17 @@ ok( my $not_bang_query = $range_parser->parse(qq/! date:("1 3" | 2)/),
 is( $not_bang_query,
     qq/NOT (date:"1 3" OR date:2)/,
     "not_bang_query $not_bang_query"
+);
+
+# double negative
+ok( my $dbl_neg_query
+        = $range_parser->parse(qq/(bar) and (-date=123 -date=456)/),
+    "parse double negative query"
+);
+
+is( $dbl_neg_query,
+    qq/swishdefault:bar AND (NOT date:123 NOT date:456)/,
+    "double negative query stringify"
 );
 
 ok( my $parser_alias_for = Search::Query->parser(

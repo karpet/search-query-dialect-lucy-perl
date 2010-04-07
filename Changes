@@ -33,3 +33,6 @@ Revision history for Search-Query-Dialect-KSx
         * fix bug in as_ks_query() where NOT foo=?* was parsed differently
           than foo!=?*
 
+0.08    xxx
+        * fix double negative bug in stringify().
+

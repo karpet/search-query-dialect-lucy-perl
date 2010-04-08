@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use Test::More tests => 22;
+use Test::More tests => 23;
 use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
@@ -77,24 +77,25 @@ my $searcher = KinoSearch::Searcher->new( index => $invindex, );
 
 # search
 my %queries = (
-    'title:(i am)'                        => 3,
-    'title:("i am")'                      => 3,
-    'color:red'                           => 1,
-    'brown'                               => 1,
-    'date=(20100301..20100331)'           => 2,
-    'date!=(20100301..20100331)'          => 1,
-    '-date:(20100301..20100331)'          => 1,
-    'am AND (-date=(20100301..20100331))' => 1,
-    'am AND (date=(20100301..20100331))'  => 2,
-    'color:re*'                           => 1,
-    'color:re?'                           => 1,
-    'color:br?wn'                         => 1,
-    'color:*n'                            => 2,
-    'color!=red'                          => 2,
-    'not color=red and not title=doc2'    => 1,
-    '"i doc1"~2'                          => 1,
-    'option!=?*'                          => 1,
-    'NOT option:?*'                       => 1,
+    'title:(i am)'                                       => 3,
+    'title:("i am")'                                     => 3,
+    'color:red'                                          => 1,
+    'brown'                                              => 1,
+    'date=(20100301..20100331)'                          => 2,
+    'date!=(20100301..20100331)'                         => 1,
+    '-date:(20100301..20100331)'                         => 1,
+    'am AND (-date=(20100301..20100331))'                => 1,
+    'am AND (date=(20100301..20100331))'                 => 2,
+    'color:re*'                                          => 1,
+    'color:re?'                                          => 1,
+    'color:br?wn'                                        => 1,
+    'color:*n'                                           => 2,
+    'color!=red'                                         => 2,
+    'not color=red and not title=doc2'                   => 1,
+    '"i doc1"~2'                                         => 1,
+    'option!=?*'                                         => 1,
+    'NOT option:?*'                                      => 1,
+    '(title=am) and (date!=20100301 and date!=20100329)' => 1,    # doc3
 );
 
 for my $str ( sort keys %queries ) {

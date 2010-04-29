@@ -6,7 +6,7 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Search::Query::Dialect::KSx::Compiler;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 =head1 NAME
 
@@ -67,8 +67,9 @@ sub _build_regex {
     my ( $self, $term ) = @_;
     $term = quotemeta($term);  # turn into a regexp that matches a literal str
     $term =~ s/\\\*/.*/g;          # convert wildcards into regex
-    $term =~ s/\\\?/./g;           # convert wildcards into regex
+    $term =~ s/\\\?/.?/g;          # convert wildcards into regex
     $term =~ s/(?:\.\*){2,}/.*/g;  # eliminate multiple consecutive wild cards
+    $term =~ s/(?:\.\?){2,}/.?/g;  # eliminate multiple consecutive wild cards
     $term =~ s/^/^/ unless $term =~ s/^\.\*//;    # anchor the regexp to
     $term =~ s/\z/\\z/ unless $term =~ s/\.\*\z//;    # the ends of the term
     $regex{$$self} = qr/$term/;
@@ -121,6 +122,8 @@ sub DESTROY {
     my $self = shift;
     delete $term{$$self};
     delete $field{$$self};
+    delete $prefix{$$self};
+    delete $regex{$$self};
     $self->SUPER::DESTROY;
 }
 

@@ -36,3 +36,6 @@ Revision history for Search-Query-Dialect-KSx
 0.08    10 April 2010
         * fix double negative bug in stringify().
 
+0.09    xxx
+        * fix mem leak in WildcardQuery that caused false test results.
+

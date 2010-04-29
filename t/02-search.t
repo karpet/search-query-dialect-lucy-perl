@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use Test::More tests => 23;
+use Test::More;
 use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
@@ -95,14 +95,21 @@ my %queries = (
     '"i doc1"~2'                                         => 1,
     'option!=?*'                                         => 1,
     'NOT option:?*'                                      => 1,
-    '(title=am) and (date!=20100301 and date!=20100329)' => 1,    # doc3
+    '(title=am) and (date!=20100301 and date!=20100329)' => 1,     # doc3
     '(re* OR gree*) AND title=am'                        => 2,
+    '(re* OR gree*)'                                     => 2,
 );
 
 for my $str ( sort keys %queries ) {
     my $query = $parser->parse($str);
 
     #$query->debug(1);
+
+    my $hits_expected = $queries{$str};
+    if ( ref $hits_expected ) {
+        $query->debug(1);
+        $hits_expected = $hits_expected->[0];
+    }
 
     #diag($query);
     my $hits = $searcher->hits(
@@ -111,9 +118,9 @@ for my $str ( sort keys %queries ) {
         num_wanted => 5,                       # more than we have
     );
 
-    is( $hits->total_hits, $queries{$str}, "$str = $queries{$str}" );
+    is( $hits->total_hits, $hits_expected, "$str = $hits_expected" );
 
-    if ( $hits->total_hits != $queries{$str} ) {
+    if ( $hits->total_hits != $hits_expected ) {
 
         $query->debug(1);
         diag($str);
@@ -142,3 +149,6 @@ $query->ignore_order_in_proximity(0);
 $ks_query = $query->as_ks_query();
 $hits = $searcher->hits( query => $ks_query, offset => 0, num_wanted => 5 );
 is( $hits->total_hits, 0, "proximity order respected" );
+
+# allow for adding new queries without adjusting test count
+done_testing( scalar( keys %queries ) + 4 );

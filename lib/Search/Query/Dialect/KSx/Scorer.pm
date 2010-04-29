@@ -9,6 +9,16 @@ our $VERSION = '0.09';
 # Inside-out member vars.
 my ( %doc_ids, %pos, %boosts, %sim, %term_freqs );
 
+sub DESTROY {
+    my $self = shift;
+    delete $doc_ids{$$self};
+    delete $pos{$$self};
+    delete $boosts{$$self};
+    delete $sim{$$self};
+    delete $term_freqs{$$self};
+    $self->SUPER::DESTROY;
+}
+
 =head1 NAME
 
 Search::Query::Dialect::KSx::Scorer - KinoSearch query extension

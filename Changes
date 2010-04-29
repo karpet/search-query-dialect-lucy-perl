@@ -38,4 +38,5 @@ Revision history for Search-Query-Dialect-KSx
 
 0.09    xxx
         * fix mem leak in WildcardQuery that caused false test results.
+        * fix mem leaks in Compiler and Scorer
 

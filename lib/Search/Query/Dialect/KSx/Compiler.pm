@@ -14,6 +14,20 @@ my (%include,           %searchable,        %idf,
     %query_norm_factor, %normalized_impact, %term_freq
 );
 
+sub DESTROY {
+    my $self = shift;
+    delete $include{$$self};
+    delete $raw_impact{$$self};
+    delete $query_norm_factor{$$self};
+    delete $searchable{$$self};
+    delete $lex_terms{$$self};
+    delete $normalized_impact{$$self};
+    delete $idf{$$self};
+    delete $doc_freq{$$self};
+    delete $term_freq{$$self};
+    $self->SUPER::DESTROY;
+}
+
 =head1 NAME
 
 Search::Query::Dialect::KSx::Compiler - KinoSearch query extension

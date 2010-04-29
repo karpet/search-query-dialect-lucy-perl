@@ -90,7 +90,7 @@ sub make_matcher {
     return unless $lexicon;
 
     # Retrieve the correct Similarity for the Query's field.
-    my $sim = $args{similarity} = $searchable->get_schema->fetch_sim($field);
+    my $sim = $args{similarity} || $searchable->get_schema->fetch_sim($field);
 
     $lexicon->seek( defined $prefix ? $prefix : '' );
 

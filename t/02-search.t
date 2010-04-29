@@ -96,6 +96,7 @@ my %queries = (
     'option!=?*'                                         => 1,
     'NOT option:?*'                                      => 1,
     '(title=am) and (date!=20100301 and date!=20100329)' => 1,    # doc3
+    '(re* OR gree*) AND title=am'                        => 2,
 );
 
 for my $str ( sort keys %queries ) {

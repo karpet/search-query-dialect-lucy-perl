@@ -213,9 +213,15 @@ Overrides base class. Currently just passes I<factor> on to parent method.
 sub apply_norm_factor {
     my ( $self, $factor ) = @_;
 
-    #carp "apply_norm_factor=$factor";
+    $factor ||= 1.0;
 
-    $self->SUPER::apply_norm_factor($factor);
+    warn "before SUPER apply_norm_factor=$factor";
+
+    my $ret = $self->SUPER::apply_norm_factor($factor);
+
+    warn "after SUPER apply_norm_factor=$factor";
+
+    return $ret;
 }
 
 =head2 get_boost
@@ -232,7 +238,7 @@ Returns imact of term on score.
 
 =cut
 
-sub sum_of_squared_weights {
+sub XXXsum_of_squared_weights {
 
     #carp "sum_of_squared_weights";
     my $self = shift;

@@ -152,7 +152,7 @@ Returns the query clause the object represents.
 
 =cut
 
-sub to_string {
+sub XXXto_string {
     my $self = shift;
     return "$field{$$self}:$term{$$self}";
 }

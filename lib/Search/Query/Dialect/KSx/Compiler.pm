@@ -211,17 +211,10 @@ Overrides base class. Currently just passes I<factor> on to parent method.
 =cut
 
 sub apply_norm_factor {
+
+    # pass-through for now
     my ( $self, $factor ) = @_;
-
-    $factor ||= 1.0;
-
-    warn "before SUPER apply_norm_factor=$factor";
-
-    my $ret = $self->SUPER::apply_norm_factor($factor);
-
-    warn "after SUPER apply_norm_factor=$factor";
-
-    return $ret;
+    $self->SUPER::apply_norm_factor($factor);
 }
 
 =head2 get_boost
@@ -238,9 +231,9 @@ Returns imact of term on score.
 
 =cut
 
-sub XXXsum_of_squared_weights {
+sub sum_of_squared_weights {
 
-    #carp "sum_of_squared_weights";
+    # pass-through for now
     my $self = shift;
     return exists $raw_impact{$$self} ? $raw_impact{$$self}**2 : '1.0';
 }

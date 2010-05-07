@@ -17,13 +17,14 @@ use KSx::Search::ProximityQuery;
 use Search::Query::Dialect::KSx::NOTWildcardQuery;
 use Search::Query::Dialect::KSx::WildcardQuery;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 __PACKAGE__->mk_accessors(
     qw(
         wildcard
         fuzzify
         ignore_order_in_proximity
+        allow_single_wildcards
         )
 );
 
@@ -62,6 +63,13 @@ methods.
 =item wildcard
 
 Default is '*'.
+
+=item allow_single_wildcards
+
+If true, terms like '*' and '?' are allowed as valid. If false,
+the Parser will croak if any term consists solely of a wildcard.
+
+The default is false.
 
 =item fuzzify
 
@@ -211,6 +219,11 @@ sub stringify_clause {
     }
     if ( $value =~ m/[\*\?]|\Q$wildcard/ ) {
         $op =~ s/:/~/g;
+        if ( $value eq '*' or $value eq '?' ) {
+            if ( !$self->allow_single_wildcards ) {
+                croak "single wildcards are not allowed: $clause";
+            }
+        }
     }
 
     my @buf;
@@ -391,6 +404,11 @@ sub _ks_clause {
     }
     if ( $value =~ m/[\*\?]|\Q$wildcard/ ) {
         $op =~ s/:/~/;
+        if ( $value eq '*' or $value eq '?' ) {
+            if ( !$self->allow_single_wildcards ) {
+                croak "single wildcards are not allowed: $clause";
+            }
+        }
     }
 
     my $quote = $clause->quote || '';

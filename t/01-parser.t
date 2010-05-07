@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 67;
+use Test::More tests => 68;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -224,6 +224,12 @@ ok( my $fuzzy_query = $fuzzy_parser->parse('foo*'), "parse foo*" );
 ok( my $fuzzy_ks    = $fuzzy_query->as_ks_query,    "fuzzy as_ks_query" );
 is( $fuzzy_ks->to_string, $fuzzy_query->stringify,
     "stringification matches" );
+
+# lone wildcards should croak
+eval { my $lone_wildcard = $fuzzy_parser->parse(qq/foo * bar/); };
+ok( $@, "lone_wildcard croaks" );
+
+#diag($@);
 
 # no fields defined
 ok( my $nofields_parser = Search::Query->parser( dialect => 'KSx', ),

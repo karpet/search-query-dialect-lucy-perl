@@ -42,6 +42,6 @@ Revision history for Search-Query-Dialect-KSx
         * bump dependency to KS 0.30_101 which fixes Perl stack bug
           that can affect WildcardQuery.
 
-0.10    xxx
+0.10    08 May 2010
         * add allow_single_wildcards feature
 

@@ -45,9 +45,8 @@ Revision history for Search-Query-Dialect-KSx
 0.10    08 May 2010
         * add allow_single_wildcards feature
 
-0.11    xxx
+0.11    10 May 2010
         * fix bug where NOT clause with no explicit field had the NOT
           qualifier applied 2x.
         * fix stringification of simple NOT clause.
-
 

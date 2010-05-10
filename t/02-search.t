@@ -21,11 +21,6 @@ $schema->spec_field( name => 'color',  type => $fulltext );
 $schema->spec_field( name => 'date',   type => $fulltext );
 $schema->spec_field( name => 'option', type => $fulltext );
 
-# some dummy fields to provoke scaling issues
-for (1 .. 100) {
-    $schema->spec_field( name => 'abc'.$_, type => $fulltext );
-}
-
 my $indexer = KinoSearch::Indexer->new(
     index    => $invindex,
     schema   => $schema,
@@ -41,10 +36,9 @@ ok( my $parser = Search::Query::Parser->new(
             color  => { analyzer => $analyzer },
             date   => { analyzer => $analyzer },
             option => { analyzer => $analyzer },
-            map { 'abc'.$_ => { analyzer => $analyzer } } (1 .. 100)
         },
         query_class_opts =>
-            { default_field => [qw( title color date option ), map { 'abc'.$_ } (1 .. 100)], },
+            { default_field => [qw( title color date option )], },
         dialect        => 'KSx',
         croak_on_error => 1,
     ),
@@ -101,9 +95,11 @@ my %queries = (
     '"i doc1"~2'                                         => 1,
     'option!=?*'                                         => 1,
     'NOT option:?*'                                      => 1,
-    '(title=am) and (date!=20100301 and date!=20100329)' => 1,     # doc3
+    '(title=am) and (date!=20100301 and date!=20100329)' => 1,    # doc3
     '(re* OR gree*) AND title=am'                        => 2,
     '(re* OR gree*)'                                     => 2,
+    'not green'                                          => 2,
+    'not green and title=doc3'                           => 1,
 );
 
 for my $str ( sort keys %queries ) {
@@ -135,9 +131,10 @@ for my $str ( sort keys %queries ) {
 
         diag( dump( $query->as_ks_query ) );
         if ( $query->as_ks_query->isa('KinoSearch::Search::NOTQuery') ) {
-            diag( dump( $query->as_ks_query->get_negated_query ) );
+            diag( "negated_query: "
+                    . dump( $query->as_ks_query->get_negated_query ) );
         }
-        diag( $query->as_ks_query->to_string );
+        diag( dump $query->as_ks_query->dump );
 
     }
 }

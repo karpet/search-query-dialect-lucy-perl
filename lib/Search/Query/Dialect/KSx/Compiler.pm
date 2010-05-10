@@ -6,7 +6,7 @@ use Carp;
 use Search::Query::Dialect::KSx::Scorer;
 use Data::Dump qw( dump );
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 # inside out vars
 my (%include,           %searchable,        %idf,

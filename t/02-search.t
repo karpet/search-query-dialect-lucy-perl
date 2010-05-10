@@ -64,6 +64,12 @@ my %docs = (
         date   => '19720329',
         option => '',
     },
+    'doc4' => {
+        title  => 'i am doc4',
+        color  => 'white',
+        date   => '20100510',
+        option => 'c',
+    },
 );
 
 # set up the index
@@ -77,29 +83,30 @@ my $searcher = KinoSearch::Searcher->new( index => $invindex, );
 
 # search
 my %queries = (
-    'title:(i am)'                                       => 3,
-    'title:("i am")'                                     => 3,
+    'title:(i am)'                                       => 4,
+    'title:("i am")'                                     => 4,
     'color:red'                                          => 1,
     'brown'                                              => 1,
     'date=(20100301..20100331)'                          => 2,
-    'date!=(20100301..20100331)'                         => 1,
-    '-date:(20100301..20100331)'                         => 1,
-    'am AND (-date=(20100301..20100331))'                => 1,
+    'date!=(20100301..20100331)'                         => 2,
+    '-date:(20100301..20100331)'                         => 2,
+    'am AND (-date=(20100301..20100331))'                => 2,
     'am AND (date=(20100301..20100331))'                 => 2,
     'color:re*'                                          => 1,
     'color:re?'                                          => 1,
     'color:br?wn'                                        => 1,
     'color:*n'                                           => 2,
-    'color!=red'                                         => 2,
-    'not color=red and not title=doc2'                   => 1,
+    'color!=red'                                         => 3,
+    'not color=red and not title=doc2'                   => 2,
     '"i doc1"~2'                                         => 1,
     'option!=?*'                                         => 1,
     'NOT option:?*'                                      => 1,
-    '(title=am) and (date!=20100301 and date!=20100329)' => 1,    # doc3
+    '(title=am) and (date!=20100301 and date!=20100329)' => 2,    # doc3 & doc4
     '(re* OR gree*) AND title=am'                        => 2,
     '(re* OR gree*)'                                     => 2,
-    'not green'                                          => 2,
+    'not green'                                          => 3,
     'not green and title=doc3'                           => 1,
+    'green and not title=doc3'                           => 1,
 );
 
 for my $str ( sort keys %queries ) {

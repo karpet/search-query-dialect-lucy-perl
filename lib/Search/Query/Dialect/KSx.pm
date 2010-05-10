@@ -77,7 +77,7 @@ If true, a wildcard is automatically appended to each query term.
 
 =item ignore_order_in_proximity
 
-If true, the terms in a proximity query will be evaluated for 
+If true, the terms in a proximity query will be evaluated for
 matches regardless of the order in which they appear. For example,
 given a document excerpt like:
 
@@ -308,7 +308,7 @@ NAME: for my $name (@fields) {
 =head2 as_ks_query
 
 Returns the Dialect object as a KinoSearch::Search::Query-based object.
-The Dialect object is walked and converted to a 
+The Dialect object is walked and converted to a
 KinoSearch::Searcher-compatible tree.
 
 =cut
@@ -349,7 +349,10 @@ sub as_ks_query {
         #warn "has_explicit_fields=$has_explicit_fields";
 
         if ( @clauses == 1 ) {
-            if ( $prefix eq '-' and $has_explicit_fields ) {
+            if (    $prefix eq '-'
+                and $has_explicit_fields
+                and !$clauses[0]->isa($ks_class) )
+            {
                 push @q, $ks_class->new( $ks_param_name => $clauses[0] );
             }
             else {
@@ -358,7 +361,7 @@ sub as_ks_query {
         }
         elsif ( !$has_explicit_fields and $prefix eq '-' ) {
 
-            #warn "do not wrap \@clauses in a $ks_class";
+            warn "do not wrap \@clauses in a $ks_class";
             push @q, @clauses;
 
         }

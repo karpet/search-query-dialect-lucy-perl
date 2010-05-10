@@ -206,7 +206,8 @@ sub stringify_clause {
     # if we have no fields, then operator is ignored.
     if ( !@fields ) {
         $self->debug and warn "no fields for " . dump($clause);
-        return qq/$quote$value$quote$proximity/;
+        my $str = qq/$quote$value$quote$proximity/;
+        return $prefix eq '-' ? ( 'NOT ' . $str ) : $str;
     }
 
     my $wildcard = $self->wildcard;

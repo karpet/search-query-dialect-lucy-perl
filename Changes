@@ -48,5 +48,6 @@ Revision history for Search-Query-Dialect-KSx
 0.11    xxx
         * fix bug where NOT clause with no explicit field had the NOT
           qualifier applied 2x.
+        * fix stringification of simple NOT clause.
 
 

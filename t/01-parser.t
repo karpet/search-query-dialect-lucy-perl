@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 68;
+use Test::More tests => 70;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -241,3 +241,7 @@ is( $nofields_query, "foo", "stringify nofields_query" );
 ok( my $proximity = $nofields_parser->parse(qq/"foo bar"~5/),
     "parse proximity phrase" );
 is( $proximity, qq/"foo bar"~5/, "stringify proximity" );
+
+# simple NOT
+ok( my $simple_not = $nofields_parser->parse(qq/not foo/), "parse NOT foo" );
+is( $simple_not, qq/NOT foo/, "stringify NOT foo" );

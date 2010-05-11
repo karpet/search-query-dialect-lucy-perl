@@ -596,6 +596,11 @@ FIELD: for my $name (@fields) {
         else {
             my $term = $values[0];
 
+            # TODO why would this happen?
+            if (!defined $term or !length $term) {
+                next FIELD;
+            }
+
             # invert fuzzy
             if ( $op eq '!~'
                 || ( $op eq '!:' and $term =~ m/[$wildcard\*\?]/ ) )

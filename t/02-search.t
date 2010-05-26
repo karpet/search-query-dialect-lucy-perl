@@ -106,6 +106,7 @@ my %queries = (
     '(re* OR gree*)'                                     => 2,
     'not green'                                          => 3,
     'not green and title=doc3'                           => 1,
+    '*oc*'                                               => 4,
     'green and not title=doc3'                           => 1,
 );
 

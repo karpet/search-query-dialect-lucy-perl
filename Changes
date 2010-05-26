@@ -50,3 +50,6 @@ Revision history for Search-Query-Dialect-KSx
           qualifier applied 2x.
         * fix stringification of simple NOT clause.
 
+0.12    xxx
+        * add suffix optimization to WildcardQuery
+

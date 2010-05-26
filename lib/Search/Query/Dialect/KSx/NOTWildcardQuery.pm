@@ -4,7 +4,7 @@ use warnings;
 use base qw( Search::Query::Dialect::KSx::WildcardQuery );
 use Carp;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 =head1 NAME
 

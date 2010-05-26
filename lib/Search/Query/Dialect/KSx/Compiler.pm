@@ -6,7 +6,7 @@ use Carp;
 use Search::Query::Dialect::KSx::Scorer;
 use Data::Dump qw( dump );
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 # inside out vars
 my (%include,           %searchable,        %idf,
@@ -84,6 +84,7 @@ sub make_matcher {
     my $parent  = $self->get_parent;
     my $term    = $parent->get_term;
     my $regex   = $parent->get_regex;
+    my $suffix  = $parent->get_suffix;
     my $field   = $parent->get_field;
     my $prefix  = $parent->get_prefix;
     my $lexicon = $lex_reader->lexicon( field => $field );
@@ -100,9 +101,14 @@ sub make_matcher {
     my $include = $include{$$self};
     while ( defined( my $lex_term = $lexicon->get_term ) ) {
 
-        #warn "lex_term=$lex_term prefix=$prefix";
+        #warn
+        #    "lex_term=$lex_term   prefix=$prefix   suffix=$suffix   regex=$regex";
 
         # weed out non-matchers early.
+        if ( defined $suffix and index( $lex_term, $suffix ) < 0 ) {
+            last unless $lexicon->next;
+            next;
+        }
         last if defined $prefix and index( $lex_term, $prefix ) != 0;
 
         #carp "$term field:$field: term>$lex_term<";

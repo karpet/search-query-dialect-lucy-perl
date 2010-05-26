@@ -6,7 +6,7 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Search::Query::Dialect::KSx::Compiler;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 =head1 NAME
 
@@ -38,6 +38,7 @@ my %term;
 my %field;
 my %regex;
 my %prefix;
+my %suffix;
 
 =head2 new( I<args> )
 
@@ -70,8 +71,9 @@ sub _build_regex {
     $term =~ s/\\\?/.?/g;          # convert wildcards into regex
     $term =~ s/(?:\.\*){2,}/.*/g;  # eliminate multiple consecutive wild cards
     $term =~ s/(?:\.\?){2,}/.?/g;  # eliminate multiple consecutive wild cards
-    $term =~ s/^/^/ unless $term =~ s/^\.\*//;    # anchor the regexp to
-    $term =~ s/\z/\\z/ unless $term =~ s/\.\*\z//;    # the ends of the term
+    $term =~ s/^/^/;    # unless $term =~ s/^\.\*//;    # anchor the regexp to
+    $term
+        =~ s/\z/\\z/;  # unless $term =~ s/\.\*\z//;    # the ends of the term
     $regex{$$self} = qr/$term/;
 
     # get the literal prefix of the regexp, if any.
@@ -94,6 +96,11 @@ sub _build_regex {
         }
     }
 
+    if ( $term =~ m/\.[\?\*](\w+)/ ) {
+        my $suffix = $1;
+        $suffix{$$self} = $suffix;
+    }
+
 }
 
 =head2 get_term
@@ -108,7 +115,12 @@ Retrieve the qr// object representing I<term>.
 
 =head2 get_prefix
 
-Retrieve the literal string (if any) that prefixes the wildcards
+Retrieve the literal string (if any) that precedes the wildcards
+in I<term>.
+
+=head2 get_suffix
+
+Retrieve the literal string (if any) that follows the wildcards
 in I<term>.
 
 =cut
@@ -117,12 +129,14 @@ sub get_term   { my $self = shift; return $term{$$self} }
 sub get_field  { my $self = shift; return $field{$$self} }
 sub get_regex  { my $self = shift; return $regex{$$self} }
 sub get_prefix { my $self = shift; return $prefix{$$self} }
+sub get_suffix { my $self = shift; return $suffix{$$self} }
 
 sub DESTROY {
     my $self = shift;
     delete $term{$$self};
     delete $field{$$self};
     delete $prefix{$$self};
+    delete $suffix{$$self};
     delete $regex{$$self};
     $self->SUPER::DESTROY;
 }
@@ -168,7 +182,7 @@ sub make_compiler {
     my %args = @_;
     $args{parent}  = $self;
     $args{include} = 1;
-    return Search::Query::Dialect::KSx::Compiler->new( %args );
+    return Search::Query::Dialect::KSx::Compiler->new(%args);
 }
 
 1;

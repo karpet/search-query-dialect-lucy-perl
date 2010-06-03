@@ -171,13 +171,20 @@ sub stringify_clause {
 
     if ( $clause->{op} eq '()' ) {
         if ( $clause->has_children and $clause->has_children == 1 ) {
-            return ( $prefix eq '-' ? 'NOT ' : '' )
-                . $self->stringify( $clause->{value} );
+            if ($prefix eq '-') {
+                return '(NOT ' . $self->stringify( $clause->{value} ) . ')';
+            }
+            else {
+                return $self->stringify( $clause->{value} );
+            }
         }
         else {
-            return
-                ( $prefix eq '-' ? 'NOT ' : '' ) . "("
-                . $self->stringify( $clause->{value} ) . ")";
+            if ($prefix eq '-') {
+                return '(NOT (' . $self->stringify( $clause->{value} ) . '))';
+            }
+            else {
+                return "(" . $self->stringify( $clause->{value} ) . ")";
+            }
         }
     }
 
@@ -246,7 +253,7 @@ NAME: for my $name (@fields) {
             push(
                 @buf,
                 join( '',
-                    'NOT ', $name, ':', qq/$quote$value$quote$proximity/ )
+                    '(NOT ', $name, ':', qq/$quote$value$quote$proximity/, ')' )
             );
         }
 
@@ -262,7 +269,7 @@ NAME: for my $name (@fields) {
             push(
                 @buf,
                 join( '',
-                    'NOT ', $name, ':', qq/$quote$value$quote$proximity/ )
+                    '(NOT ', $name, ':', qq/$quote$value$quote$proximity/, ')' )
             );
         }
 

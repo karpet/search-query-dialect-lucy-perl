@@ -171,15 +171,15 @@ sub stringify_clause {
 
     if ( $clause->{op} eq '()' ) {
         if ( $clause->has_children and $clause->has_children == 1 ) {
-            if ($prefix eq '-') {
-                return '(NOT ' . $self->stringify( $clause->{value} ) . ')';
+            if ( $prefix eq '-' ) {
+                return 'NOT ' . $self->stringify( $clause->{value} ) . '';
             }
             else {
                 return $self->stringify( $clause->{value} );
             }
         }
         else {
-            if ($prefix eq '-') {
+            if ( $prefix eq '-' ) {
                 return '(NOT (' . $self->stringify( $clause->{value} ) . '))';
             }
             else {
@@ -253,7 +253,8 @@ NAME: for my $name (@fields) {
             push(
                 @buf,
                 join( '',
-                    '(NOT ', $name, ':', qq/$quote$value$quote$proximity/, ')' )
+                    '(NOT ', $name, ':', qq/$quote$value$quote$proximity/,
+                    ')' )
             );
         }
 
@@ -269,7 +270,8 @@ NAME: for my $name (@fields) {
             push(
                 @buf,
                 join( '',
-                    '(NOT ', $name, ':', qq/$quote$value$quote$proximity/, ')' )
+                    '(NOT ', $name, ':', qq/$quote$value$quote$proximity/,
+                    ')' )
             );
         }
 
@@ -604,7 +606,7 @@ FIELD: for my $name (@fields) {
             my $term = $values[0];
 
             # TODO why would this happen?
-            if (!defined $term or !length $term) {
+            if ( !defined $term or !length $term ) {
                 next FIELD;
             }
 

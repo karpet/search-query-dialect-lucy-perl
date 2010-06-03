@@ -52,4 +52,5 @@ Revision history for Search-Query-Dialect-KSx
 
 0.12    xxx
         * add suffix optimization to WildcardQuery
+        * preserve NOT clauses by always wrapping in a pair of ().
 

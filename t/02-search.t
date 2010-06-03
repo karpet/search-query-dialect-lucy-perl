@@ -70,6 +70,12 @@ my %docs = (
         date   => '20100510',
         option => 'c',
     },
+    'doc5' => {
+        title  => 'unlike the others',
+        color  => 'teal',
+        date   => '19000101',
+        option => 'd',
+    },
 );
 
 # set up the index
@@ -88,26 +94,28 @@ my %queries = (
     'color:red'                                          => 1,
     'brown'                                              => 1,
     'date=(20100301..20100331)'                          => 2,
-    'date!=(20100301..20100331)'                         => 2,
-    '-date:(20100301..20100331)'                         => 2,
+    'date!=(20100301..20100331)'                         => 3,
+    '-date:(20100301..20100331)'                         => 3,
     'am AND (-date=(20100301..20100331))'                => 2,
     'am AND (date=(20100301..20100331))'                 => 2,
     'color:re*'                                          => 1,
     'color:re?'                                          => 1,
     'color:br?wn'                                        => 1,
     'color:*n'                                           => 2,
-    'color!=red'                                         => 3,
-    'not color=red and not title=doc2'                   => 2,
+    'color!=red'                                         => 4,
+    'not color=red and not title=doc2'                   => 3,
     '"i doc1"~2'                                         => 1,
     'option!=?*'                                         => 1,
     'NOT option:?*'                                      => 1,
-    '(title=am) and (date!=20100301 and date!=20100329)' => 2,    # doc3 & doc4
+    '(title=am) and (date!=20100301 and date!=20100329)' => 2,   # doc3 & doc4
     '(re* OR gree*) AND title=am'                        => 2,
     '(re* OR gree*)'                                     => 2,
-    'not green'                                          => 3,
+    'not green'                                          => 4,
     'not green and title=doc3'                           => 1,
     '*oc*'                                               => 4,
     'green and not title=doc3'                           => 1,
+    '((title=doc*) (NOT color=teal)) and (NOT option=c) and (date=(20100301..20100331))'
+        => 2,
 );
 
 for my $str ( sort keys %queries ) {
@@ -130,7 +138,7 @@ for my $str ( sort keys %queries ) {
 
     is( $hits->total_hits, $hits_expected, "$str = $hits_expected" );
 
-    if ( $hits->total_hits != $hits_expected ) {
+    if ( $hits->total_hits != $hits_expected or $query->debug ) {
 
         $query->debug(1);
         diag($str);

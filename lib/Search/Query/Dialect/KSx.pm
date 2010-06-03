@@ -169,21 +169,36 @@ sub stringify_clause {
     #warn dump $clause;
     #warn "prefix = '$prefix'";
 
+    # no wrapping () around NOT clauses because the () is added
+    # below per-clause.
     if ( $clause->{op} eq '()' ) {
+        my $str = $self->stringify( $clause->{value} );
         if ( $clause->has_children and $clause->has_children == 1 ) {
             if ( $prefix eq '-' ) {
-                return 'NOT ' . $self->stringify( $clause->{value} ) . '';
+                return "(NOT ($str))";
             }
             else {
-                return $self->stringify( $clause->{value} );
+
+                # try not to double up the () unnecessarily
+                if ( $str =~ m/^\(/ ) {
+                    return $str;
+                }
+                else {
+                    return "($str)";
+                }
             }
         }
         else {
             if ( $prefix eq '-' ) {
-                return '(NOT (' . $self->stringify( $clause->{value} ) . '))';
+                if ( $str =~ m/^\(/ ) {
+                    return "(NOT $str)";
+                }
+                else {
+                    return "(NOT ($str))";
+                }
             }
             else {
-                return "(" . $self->stringify( $clause->{value} ) . ")";
+                return "($str)";
             }
         }
     }

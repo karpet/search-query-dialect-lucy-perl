@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 70;
+use Test::More tests => 74;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -87,7 +87,7 @@ ok( my $gardenq = $parser3->parse('(garden) AND (-foo=(20100208..20100309))'),
 #dump $gardenq;
 
 is( $gardenq,
-    qq/garden AND (NOT foo:(20100208..20100309))/,
+    qq/(garden) AND (foo!:(20100208..20100309))/,
     "parsed garden query"
 );
 
@@ -192,7 +192,7 @@ ok( my $dbl_neg_query
 );
 
 is( $dbl_neg_query,
-    qq/swishdefault:bar AND ((NOT date:123) (NOT date:456))/,
+    qq/(swishdefault:bar) AND ((NOT date:123) (NOT date:456))/,
     "double negative query stringify"
 );
 
@@ -246,3 +246,27 @@ is( $proximity, qq/"foo bar"~5/, "stringify proximity" );
 # simple NOT
 ok( my $simple_not = $nofields_parser->parse(qq/not foo/), "parse NOT foo" );
 is( $simple_not, qq/NOT foo/, "stringify NOT foo" );
+
+# complex NOT
+ok( my $complex_not_parser = Search::Query->parser(
+        fields  => [qw( one two three four five )],
+        dialect => 'KSx',
+    ),
+    "new complex not parser"
+);
+
+my $complex_str
+    = qq/one!:(20100504..20100603) AND (two:"APMG") AND (NOT three:"MN") AND (NOT four:"INC_1") AND five:active/;
+my $complex_ks
+    = qq/(-one:[20100504 TO 20100603] AND two:"APMG" AND -three:"MN" AND -four:"INC_1" AND five:active)/;
+
+ok( my $complex_not = $complex_not_parser->parse($complex_str),
+    "parse complex NOT" );
+
+is( $complex_str, $complex_not, "complex not query round-trip" );
+
+#diag($complex_not);
+#diag( dump $complex_not );
+
+is( $complex_not->as_ks_query()->to_string(),
+    $complex_ks, "complex_not as KS string" );

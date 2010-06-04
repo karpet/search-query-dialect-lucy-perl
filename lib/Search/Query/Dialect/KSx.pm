@@ -169,8 +169,6 @@ sub stringify_clause {
     #warn dump $clause;
     #warn "prefix = '$prefix'";
 
-    # no wrapping () around NOT clauses because the () is added
-    # below per-clause.
     if ( $clause->{op} eq '()' ) {
         my $str = $self->stringify( $clause->{value} );
         if ( $clause->has_children and $clause->has_children == 1 ) {

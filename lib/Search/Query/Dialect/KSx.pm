@@ -122,6 +122,16 @@ my %op_map = (
     '-' => ' ',
 );
 
+sub _get_clause_joiner {
+    my $self = shift;
+    if ( $self->parser->default_boolop eq '+' ) {
+        return 'AND';
+    }
+    else {
+        return 'OR';
+    }
+}
+
 sub stringify {
     my $self = shift;
     my $tree = shift || $self;
@@ -138,8 +148,8 @@ sub stringify {
 
         push @q, join( $joiner, grep { defined and length } @clauses );
     }
-
-    return join " AND ", @q;
+    my $clause_joiner = $self->_get_clause_joiner;
+    return join " $clause_joiner ", @q;
 }
 
 sub _doctor_value {
@@ -394,9 +404,12 @@ sub as_ks_query {
 
     }
 
+    my $clause_joiner   = $self->_get_clause_joiner;
+    my $ks_class_joiner = 'KinoSearch::Search::' . $clause_joiner . 'Query';
+
     return @q == 1
         ? $q[0]
-        : KinoSearch::Search::ANDQuery->new( children => \@q );
+        : $ks_class_joiner->new( children => \@q );
 }
 
 sub _ks_clause {

@@ -53,4 +53,7 @@ Revision history for Search-Query-Dialect-KSx
 0.12    xxx
         * add suffix optimization to WildcardQuery
         * preserve NOT clauses by always wrapping in a pair of ().
+        * allow for default_boolop to join clauses as ORQuery instead of
+          only ANDQuery. NOTE that unlike KinoSearch::QueryParser, this
+          module defaults to 'AND' and not 'OR'.
 

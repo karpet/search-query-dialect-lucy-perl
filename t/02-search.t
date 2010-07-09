@@ -194,9 +194,9 @@ $parser->term_expander(
 ok( my $wild_query = $parser->parse(qq/title=doc*/), "parse query" );
 $ks_query = $wild_query->as_ks_query();
 
-diag($wild_query);
-diag(dump $ks_query->dump);
-diag($ks_query->to_string);
+#diag($wild_query);
+#diag(dump $ks_query->dump);
+#diag($ks_query->to_string);
 $hits = $searcher->hits( query => $ks_query, offset => 0, num_wanted => 5 );
 is( $hits->total_hits, 4, "alternate wildcard works" );
 

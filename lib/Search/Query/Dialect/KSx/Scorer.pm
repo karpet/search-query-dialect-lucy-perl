@@ -4,7 +4,7 @@ use warnings;
 use base qw( KinoSearch::Search::Matcher );
 use Carp;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 # Inside-out member vars.
 my ( %doc_ids, %pos, %boosts, %sim, %term_freqs );

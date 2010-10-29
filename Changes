@@ -57,3 +57,5 @@ Revision history for Search-Query-Dialect-KSx
           only ANDQuery. NOTE that unlike KinoSearch::QueryParser, this
           module defaults to 'AND' and not 'OR'.
 
+0.13    28 Oct 2010
+        * bump dep on KS 0.31 release.

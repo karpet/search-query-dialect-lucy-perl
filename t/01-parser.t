@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 74;
+use Test::More tests => 75;
 use Data::Dump qw( dump );
 
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -217,6 +217,8 @@ is( $query_alias_for2, qq/foo/, "query expanded omits aliases" );
 # wildcards
 ok( my $fuzzy_parser = Search::Query->parser(
         dialect          => 'KSx',
+        croak_on_error   => 1,
+        fields           => [qw( field1 )],
         query_class_opts => { default_field => 'field1' }
     ),
     "new fuzzy parser"
@@ -270,3 +272,8 @@ is( $complex_str, $complex_not, "complex not query round-trip" );
 
 is( $complex_not->as_ks_query()->to_string(),
     $complex_ks, "complex_not as KS string" );
+
+####################################################
+# bad query handling
+my $bad_query = $nofields_parser->parse(qq/foo -- or bar/);
+ok( $nofields_parser->error, "bad query yields error but not croak" );

@@ -6,7 +6,7 @@ use Scalar::Util qw( blessed );
 
 __PACKAGE__->mk_accessors(qw( type is_int analyzer ));
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 =head1 NAME
 

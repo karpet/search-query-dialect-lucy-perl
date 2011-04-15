@@ -6,7 +6,7 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Search::Query::Dialect::KSx::Compiler;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 =head1 NAME
 

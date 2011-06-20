@@ -60,6 +60,6 @@ Revision history for Search-Query-Dialect-KSx
 0.13    28 Oct 2010
         * bump dep on KS 0.31 release.
 
-0.14    xxx
+0.14    19 June 2011
         * bump dep on Search::Query to 0.19 for croak_on_error fix.
 

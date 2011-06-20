@@ -1,4 +1,4 @@
-package Search::Query::Field::KSx;
+package Search::Query::Field::Lucy;
 use strict;
 use warnings;
 use base qw( Search::Query::Field );
@@ -10,19 +10,19 @@ our $VERSION = '0.14';
 
 =head1 NAME
 
-Search::Query::Field::KSx - query field representing a KinoSearch field
+Search::Query::Field::Lucy - query field representing a Lucy field
 
 =head1 SYNOPSIS
 
- my $field = Search::Query::Field::KSx->new( 
+ my $field = Search::Query::Field::Lucy->new( 
     name        => 'foo',
     alias_for   => [qw( bar bing )], 
  );
 
 =head1 DESCRIPTION
 
-Search::Query::Field::KSx implements field
-validation and aliasing in KinoSearch search queries.
+Search::Query::Field::Lucy implements field
+validation and aliasing in Lucy search queries.
 
 =head1 METHODS
 
@@ -37,7 +37,7 @@ Available params are also standard attribute accessor methods.
 
 =item type
 
-The column type. This may be a KinoSearch::FieldType object
+The column type. This may be a Lucy::FieldType object
 or a simple string.
 
 =item is_int
@@ -46,7 +46,7 @@ Set if C<type> matches m/int|num|date/.
 
 =item analyzer
 
-Set to a KinoSearch::Analysis::Analyzer-based object (optional).
+Set to a Lucy::Analysis::Analyzer-based object (optional).
 
 =back
 
@@ -80,15 +80,15 @@ Peter Karman, C<< <karman at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-search-query-dialect-ksx at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-KSx>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-search-query-dialect-Lucy at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-Lucy>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Search::Query::Dialect::KSx
+    perldoc Search::Query::Dialect::Lucy
 
 
 You can also look for information at:
@@ -97,19 +97,19 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-KSx>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-Lucy>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Search-Query-Dialect-KSx>
+L<http://annocpan.org/dist/Search-Query-Dialect-Lucy>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Search-Query-Dialect-KSx>
+L<http://cpanratings.perl.org/d/Search-Query-Dialect-Lucy>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Search-Query-Dialect-KSx/>
+L<http://search.cpan.org/dist/Search-Query-Dialect-Lucy/>
 
 =back
 

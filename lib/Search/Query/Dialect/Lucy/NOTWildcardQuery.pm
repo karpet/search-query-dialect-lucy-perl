@@ -1,18 +1,18 @@
-package Search::Query::Dialect::KSx::NOTWildcardQuery;
+package Search::Query::Dialect::Lucy::NOTWildcardQuery;
 use strict;
 use warnings;
-use base qw( Search::Query::Dialect::KSx::WildcardQuery );
+use base qw( Search::Query::Dialect::Lucy::WildcardQuery );
 use Carp;
 
 our $VERSION = '0.14';
 
 =head1 NAME
 
-Search::Query::Dialect::KSx::NOTWildcardQuery - KinoSearch query extension
+Search::Query::Dialect::Lucy::NOTWildcardQuery - Lucy query extension
 
 =head1 SYNOPSIS
 
- my $query = Search::Query->parser( dialect => 'KSx' )->parse('myfield!:foo*');
+ my $query = Search::Query->parser( dialect => 'Lucy' )->parse('myfield!:foo*');
  my $ks_query = $query->as_ks_query();
  # $ks_query isa NOTWildcardQuery
 
@@ -26,26 +26,26 @@ then a NOTWildcardQuery is equivalent to this:
 
  $term !~ m/$query/
 
-B<Note> that the as_ks_query() method in Dialect::KSx does B<not> use
+B<Note> that the as_ks_query() method in Dialect::Lucy does B<not> use
 this class but instead wraps a WildcardQuery in a NOTQuery, which allows
 for matching null values as well. So currently this class is not used
-by Search::Query::Dialect::KSx but is included here in case someone finds it 
+by Search::Query::Dialect::Lucy but is included here in case someone finds it 
 useful.
 
 =head1 METHODS
 
-This class isa Search::Query::Dialect::KSx::WildcardQuery subclass.
+This class isa Search::Query::Dialect::Lucy::WildcardQuery subclass.
 Only new or overridden methods are documented.
 
 =head2 make_compiler
 
-Returns a Search::Query::Dialect::KSx::Compiler object.
+Returns a Search::Query::Dialect::Lucy::Compiler object.
 
 =cut
 
 sub make_compiler {
     my $self = shift;
-    return Search::Query::Dialect::KSx::Compiler->new(
+    return Search::Query::Dialect::Lucy::Compiler->new(
         @_,
         parent  => $self,
         include => 0,
@@ -62,15 +62,15 @@ Peter Karman, C<< <karman at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-search-query-dialect-ksx at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-KSx>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-search-query-dialect-Lucy at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-Lucy>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Search::Query::Dialect::KSx
+    perldoc Search::Query::Dialect::Lucy
 
 
 You can also look for information at:
@@ -79,25 +79,25 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-KSx>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-Lucy>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Search-Query-Dialect-KSx>
+L<http://annocpan.org/dist/Search-Query-Dialect-Lucy>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Search-Query-Dialect-KSx>
+L<http://cpanratings.perl.org/d/Search-Query-Dialect-Lucy>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Search-Query-Dialect-KSx/>
+L<http://search.cpan.org/dist/Search-Query-Dialect-Lucy/>
 
 =back
 
 =head1 ACKNOWLEDGEMENTS
 
-Based on the sample PrefixQuery code in the KinoSearch distribution.
+Based on the sample PrefixQuery code in the Lucy distribution.
 
 =head1 COPYRIGHT & LICENSE
 

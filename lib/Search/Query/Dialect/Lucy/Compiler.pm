@@ -1,9 +1,9 @@
-package Search::Query::Dialect::KSx::Compiler;
+package Search::Query::Dialect::Lucy::Compiler;
 use strict;
 use warnings;
-use base qw( KinoSearch::Search::Compiler );
+use base qw( Lucy::Search::Compiler );
 use Carp;
-use Search::Query::Dialect::KSx::Scorer;
+use Search::Query::Dialect::Lucy::Scorer;
 use Data::Dump qw( dump );
 
 our $VERSION = '0.14';
@@ -30,15 +30,15 @@ sub DESTROY {
 
 =head1 NAME
 
-Search::Query::Dialect::KSx::Compiler - KinoSearch query extension
+Search::Query::Dialect::Lucy::Compiler - Lucy query extension
 
 =head1 SYNOPSIS
 
-    # see KinoSearch::Search::Compiler
+    # see Lucy::Search::Compiler
 
 =head1 METHODS
 
-This class isa KinoSearch::Search::Compiler subclass . Only new
+This class isa Lucy::Search::Compiler subclass . Only new
 or overridden methods are documented .
 
 =cut
@@ -65,7 +65,7 @@ sub new {
 
 =head2 make_matcher( I<args> )
 
-Returns a Search::Query::Dialect::KSx::Scorer object.
+Returns a Search::Query::Dialect::Lucy::Scorer object.
 
 =cut
 
@@ -76,9 +76,9 @@ sub make_matcher {
     my $searchable = $searchable{$$self};
 
     # Retrieve low-level components LexiconReader and PostingListReader.
-    my $lex_reader = $seg_reader->obtain("KinoSearch::Index::LexiconReader");
+    my $lex_reader = $seg_reader->obtain("Lucy::Index::LexiconReader");
     my $plist_reader
-        = $seg_reader->obtain("KinoSearch::Index::PostingListReader");
+        = $seg_reader->obtain("Lucy::Index::PostingListReader");
 
     # Acquire a Lexicon and seek it to our query string.
     my $parent  = $self->get_parent;
@@ -159,7 +159,7 @@ sub make_matcher {
     # make final preparations
     $self->_perform_query_normalization($searchable);
 
-    return Search::Query::Dialect::KSx::Scorer->new(
+    return Search::Query::Dialect::Lucy::Scorer->new(
         posting_lists => \@posting_lists,
         compiler      => $self,
     );
@@ -200,7 +200,7 @@ sub get_lex_terms {
 
 sub _perform_query_normalization {
 
-    # copied from KinoSearch::Search::Weight originally
+    # copied from Lucy::Search::Weight originally
     my ( $self, $searcher ) = @_;
     my $sim    = $self->get_similarity;
     my $factor = $self->sum_of_squared_weights;    # factor = ( tf_q * idf_t )
@@ -246,7 +246,7 @@ sub sum_of_squared_weights {
 
 =head2 normalize()
 
-Affects the score of the term. See KinoSearch::Search::Compiler.
+Affects the score of the term. See Lucy::Search::Compiler.
 
 =cut
 
@@ -274,15 +274,15 @@ Peter Karman, C<< <karman at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-search-query-dialect-ksx at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-KSx>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-search-query-dialect-Lucy at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-Lucy>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Search::Query::Dialect::KSx
+    perldoc Search::Query::Dialect::Lucy
 
 
 You can also look for information at:
@@ -291,25 +291,25 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-KSx>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-Lucy>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Search-Query-Dialect-KSx>
+L<http://annocpan.org/dist/Search-Query-Dialect-Lucy>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Search-Query-Dialect-KSx>
+L<http://cpanratings.perl.org/d/Search-Query-Dialect-Lucy>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Search-Query-Dialect-KSx/>
+L<http://search.cpan.org/dist/Search-Query-Dialect-Lucy/>
 
 =back
 
 =head1 ACKNOWLEDGEMENTS
 
-Based on the sample PrefixQuery code in the KinoSearch distribution.
+Based on the sample PrefixQuery code in the Lucy distribution.
 
 =head1 COPYRIGHT & LICENSE
 

@@ -1,21 +1,21 @@
-package Search::Query::Dialect::KSx;
+package Search::Query::Dialect::Lucy;
 use strict;
 use warnings;
 use base qw( Search::Query::Dialect::Native );
 use Carp;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
-use Search::Query::Field::KSx;
-use KinoSearch::Search::ANDQuery;
-use KinoSearch::Search::NoMatchQuery;
-use KinoSearch::Search::NOTQuery;
-use KinoSearch::Search::ORQuery;
-use KinoSearch::Search::PhraseQuery;
-use KinoSearch::Search::RangeQuery;
-use KinoSearch::Search::TermQuery;
-use KSx::Search::ProximityQuery;
-use Search::Query::Dialect::KSx::NOTWildcardQuery;
-use Search::Query::Dialect::KSx::WildcardQuery;
+use Search::Query::Field::Lucy;
+use Lucy::Search::ANDQuery;
+use Lucy::Search::NoMatchQuery;
+use Lucy::Search::NOTQuery;
+use Lucy::Search::ORQuery;
+use Lucy::Search::PhraseQuery;
+use Lucy::Search::RangeQuery;
+use Lucy::Search::TermQuery;
+use Lucy::Search::ProximityQuery;
+use Search::Query::Dialect::Lucy::NOTWildcardQuery;
+use Search::Query::Dialect::Lucy::WildcardQuery;
 
 our $VERSION = '0.14';
 
@@ -30,18 +30,18 @@ __PACKAGE__->mk_accessors(
 
 =head1 NAME
 
-Search::Query::Dialect::KSx - KinoSearch query dialect
+Search::Query::Dialect::Lucy - Lucy query dialect
 
 =head1 SYNOPSIS
 
- my $query = Search::Query->parser( dialect => 'KSx' )->parse('foo');
+ my $query = Search::Query->parser( dialect => 'Lucy' )->parse('foo');
  print $query;
  my $ks_query = $query->as_ks_query();
  my $hits = $ks_searcher->hits( query => $ks_query );
 
 =head1 DESCRIPTION
 
-Search::Query::Dialect::KSx extends the KinoSearch::QueryParser syntax
+Search::Query::Dialect::Lucy extends the Lucy::QueryParser syntax
 to support wildcards, proximity and ranges, in addition to the standard
 Search::Query features.
 
@@ -340,9 +340,9 @@ NAME: for my $name (@fields) {
 
 =head2 as_ks_query
 
-Returns the Dialect object as a KinoSearch::Search::Query-based object.
+Returns the Dialect object as a Lucy::Search::Query-based object.
 The Dialect object is walked and converted to a
-KinoSearch::Searcher-compatible tree.
+Lucy::Searcher-compatible tree.
 
 =cut
 
@@ -370,11 +370,11 @@ sub as_ks_query {
         }
         next if !@clauses;
 
-        my $ks_class = 'KinoSearch::Search::' . $joiner . 'Query';
+        my $ks_class = 'Lucy::Search::' . $joiner . 'Query';
         my $ks_param_name = $joiner eq 'NOT' ? 'negated_query' : 'children';
         @clauses = grep {defined} @clauses;
         if ( $prefix eq '-' and @clauses > 1 ) {
-            $ks_class      = 'KinoSearch::Search::ANDQuery';
+            $ks_class      = 'Lucy::Search::ANDQuery';
             $ks_param_name = 'children';
         }
 
@@ -405,7 +405,7 @@ sub as_ks_query {
     }
 
     my $clause_joiner   = $self->_get_clause_joiner;
-    my $ks_class_joiner = 'KinoSearch::Search::' . $clause_joiner . 'Query';
+    my $ks_class_joiner = 'Lucy::Search::' . $clause_joiner . 'Query';
 
     return @q == 1
         ? $q[0]
@@ -484,7 +484,7 @@ FIELD: for my $name (@fields) {
                 croak "range of values must be a 2-element ARRAY";
             }
 
-            my $range_query = KinoSearch::Search::RangeQuery->new(
+            my $range_query = Lucy::Search::RangeQuery->new(
                 field         => $name,
                 lower_term    => $value->[0],
                 upper_term    => $value->[1],
@@ -503,7 +503,7 @@ FIELD: for my $name (@fields) {
                 croak "range of values must be a 2-element ARRAY";
             }
 
-            my $range_query = KinoSearch::Search::RangeQuery->new(
+            my $range_query = Lucy::Search::RangeQuery->new(
                 field         => $name,
                 lower_term    => $value->[0],
                 upper_term    => $value->[1],
@@ -512,7 +512,7 @@ FIELD: for my $name (@fields) {
             );
             push(
                 @buf,
-                KinoSearch::Search::NOTQuery->new(
+                Lucy::Search::NOTQuery->new(
                     negated_query => $range_query
                 )
             );
@@ -540,19 +540,19 @@ FIELD: for my $name (@fields) {
                 # if stemmer, apply only to prefix if at all.
                 my $stemmer;
                 if ($field->analyzer->isa(
-                        'KinoSearch::Analysis::PolyAnalyzer')
+                        'Lucy::Analysis::PolyAnalyzer')
                     )
                 {
                     my $analyzers = $field->analyzer->get_analyzers();
                     for my $ana (@$analyzers) {
-                        if ( $ana->isa('KinoSearch::Analysis::Stemmer') ) {
+                        if ( $ana->isa('Lucy::Analysis::Stemmer') ) {
                             $stemmer = $ana;
                             last;
                         }
                     }
                 }
                 elsif (
-                    $field->analyzer->isa('KinoSearch::Analysis::Stemmer') )
+                    $field->analyzer->isa('Lucy::Analysis::Stemmer') )
                 {
                     $stemmer = $field->analyzer;
                 }
@@ -589,7 +589,7 @@ FIELD: for my $name (@fields) {
                     while ( $n_values-- > 0 ) {
                         push(
                             @permutations,
-                            KSx::Search::ProximityQuery->new(
+                            Lucy::Search::ProximityQuery->new(
                                 field  => $name,
                                 terms  => [@values],    # new array
                                 within => $proximity,
@@ -602,7 +602,7 @@ FIELD: for my $name (@fields) {
                         and dump [ map { $_->get_terms } @permutations ];
                     push(
                         @buf,
-                        KinoSearch::Search::ORQuery->new(
+                        Lucy::Search::ORQuery->new(
                             children => \@permutations,
                         )
                     );
@@ -610,7 +610,7 @@ FIELD: for my $name (@fields) {
                 else {
                     push(
                         @buf,
-                        KSx::Search::ProximityQuery->new(
+                        Lucy::Search::ProximityQuery->new(
                             field  => $name,
                             terms  => \@values,
                             within => $proximity,
@@ -621,7 +621,7 @@ FIELD: for my $name (@fields) {
             else {
                 push(
                     @buf,
-                    KinoSearch::Search::PhraseQuery->new(
+                    Lucy::Search::PhraseQuery->new(
                         field => $name,
                         terms => \@values,
                     )
@@ -656,7 +656,7 @@ FIELD: for my $name (@fields) {
                 if ( $prefix eq '-' ) {
                     push(
                         @buf,
-                        Search::Query::Dialect::KSx::WildcardQuery->new(
+                        Search::Query::Dialect::Lucy::WildcardQuery->new(
                             field => $name,
                             term  => $term,
                         )
@@ -665,9 +665,9 @@ FIELD: for my $name (@fields) {
                 else {
                     push(
                         @buf,
-                        KinoSearch::Search::NOTQuery->new(
+                        Lucy::Search::NOTQuery->new(
                             negated_query =>
-                                Search::Query::Dialect::KSx::WildcardQuery
+                                Search::Query::Dialect::Lucy::WildcardQuery
                                 ->new(
                                 field => $name,
                                 term  => $term,
@@ -686,7 +686,7 @@ FIELD: for my $name (@fields) {
 
                 push(
                     @buf,
-                    Search::Query::Dialect::KSx::WildcardQuery->new(
+                    Search::Query::Dialect::Lucy::WildcardQuery->new(
                         field => $name,
                         term  => $term,
                     )
@@ -697,8 +697,8 @@ FIELD: for my $name (@fields) {
             elsif ( $op eq '!:' ) {
                 push(
                     @buf,
-                    KinoSearch::Search::NOTQuery->new(
-                        negated_query => KinoSearch::Search::TermQuery->new(
+                    Lucy::Search::NOTQuery->new(
+                        negated_query => Lucy::Search::TermQuery->new(
                             field => $name,
                             term  => $term,
                         )
@@ -710,7 +710,7 @@ FIELD: for my $name (@fields) {
             else {
                 push(
                     @buf,
-                    KinoSearch::Search::TermQuery->new(
+                    Lucy::Search::TermQuery->new(
                         field => $name,
                         term  => $term,
                     )
@@ -723,17 +723,17 @@ FIELD: for my $name (@fields) {
         return $buf[0];
     }
     my $joiner = $prefix eq '-' ? 'AND' : 'OR';
-    my $ks_class = 'KinoSearch::Search::' . $joiner . 'Query';
+    my $ks_class = 'Lucy::Search::' . $joiner . 'Query';
     return $ks_class->new( children => \@buf );
 }
 
 =head2 field_class
 
-Returns "Search::Query::Field::KSx".
+Returns "Search::Query::Field::Lucy".
 
 =cut
 
-sub field_class {'Search::Query::Field::KSx'}
+sub field_class {'Search::Query::Field::Lucy'}
 
 1;
 
@@ -745,15 +745,15 @@ Peter Karman, C<< <karman at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-search-query-dialect-ksx at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-KSx>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-search-query-dialect-Lucy at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-Lucy>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Search::Query::Dialect::KSx
+    perldoc Search::Query::Dialect::Lucy
 
 
 You can also look for information at:
@@ -762,19 +762,19 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-KSx>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-Lucy>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Search-Query-Dialect-KSx>
+L<http://annocpan.org/dist/Search-Query-Dialect-Lucy>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Search-Query-Dialect-KSx>
+L<http://cpanratings.perl.org/d/Search-Query-Dialect-Lucy>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Search-Query-Dialect-KSx/>
+L<http://search.cpan.org/dist/Search-Query-Dialect-Lucy/>
 
 =back
 

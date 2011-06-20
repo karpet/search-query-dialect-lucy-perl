@@ -1,7 +1,7 @@
-package Search::Query::Dialect::KSx::Scorer;
+package Search::Query::Dialect::Lucy::Scorer;
 use strict;
 use warnings;
-use base qw( KinoSearch::Search::Matcher );
+use base qw( Lucy::Search::Matcher );
 use Carp;
 
 our $VERSION = '0.14';
@@ -21,15 +21,15 @@ sub DESTROY {
 
 =head1 NAME
 
-Search::Query::Dialect::KSx::Scorer - KinoSearch query extension
+Search::Query::Dialect::Lucy::Scorer - Lucy query extension
 
 =head1 SYNOPSIS
 
- # see KinoSearch::Search::Matcher
+ # see Lucy::Search::Matcher
 
 =head1 METHODS
 
-This class isa KinoSearch::Search::Matcher subclass.
+This class isa Lucy::Search::Matcher subclass.
 Only new or overridden methods are documented.
 
 =cut
@@ -118,15 +118,15 @@ Peter Karman, C<< <karman at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-search-query-dialect-ksx at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-KSx>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-search-query-dialect-Lucy at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-Query-Dialect-Lucy>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Search::Query::Dialect::KSx
+    perldoc Search::Query::Dialect::Lucy
 
 
 You can also look for information at:
@@ -135,25 +135,25 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-KSx>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-Lucy>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Search-Query-Dialect-KSx>
+L<http://annocpan.org/dist/Search-Query-Dialect-Lucy>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Search-Query-Dialect-KSx>
+L<http://cpanratings.perl.org/d/Search-Query-Dialect-Lucy>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Search-Query-Dialect-KSx/>
+L<http://search.cpan.org/dist/Search-Query-Dialect-Lucy/>
 
 =back
 
 =head1 ACKNOWLEDGEMENTS
 
-Based on the sample PrefixQuery code in the KinoSearch distribution.
+Based on the sample PrefixQuery code in the Lucy distribution.
 
 =head1 COPYRIGHT & LICENSE
 

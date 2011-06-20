@@ -6,13 +6,14 @@ use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
 
-use Lucy::Schema;
-use Lucy::FieldType::FullTextType;
+use Lucy::Plan::Schema;
+use Lucy::Plan::FullTextType;
 use Lucy::Analysis::PolyAnalyzer;
-use Lucy::Indexer;
-my $schema   = Lucy::Schema->new;
+use Lucy::Index::Indexer;
+use Lucy::Search::IndexSearcher;
+my $schema   = Lucy::Plan::Schema->new;
 my $analyzer = Lucy::Analysis::PolyAnalyzer->new( language => 'en', );
-my $fulltext = Lucy::FieldType::FullTextType->new(
+my $fulltext = Lucy::Plan::FullTextType->new(
     analyzer => $analyzer,
     sortable => 1,
 );
@@ -21,7 +22,7 @@ $schema->spec_field( name => 'color',  type => $fulltext );
 $schema->spec_field( name => 'date',   type => $fulltext );
 $schema->spec_field( name => 'option', type => $fulltext );
 
-my $indexer = Lucy::Indexer->new(
+my $indexer = Lucy::Index::Indexer->new(
     index    => $invindex,
     schema   => $schema,
     create   => 1,
@@ -90,7 +91,7 @@ for my $doc ( keys %docs ) {
 
 $indexer->commit;
 
-my $searcher = Lucy::Searcher->new( index => $invindex, );
+my $searcher = Lucy::Search::IndexSearcher->new( index => $invindex, );
 
 # search
 my %queries = (

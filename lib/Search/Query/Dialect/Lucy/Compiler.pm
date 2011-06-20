@@ -6,7 +6,7 @@ use Carp;
 use Search::Query::Dialect::Lucy::Scorer;
 use Data::Dump qw( dump );
 
-our $VERSION = '0.14';
+our $VERSION = '0.01';
 
 # inside out vars
 my (%include,           %searchable,        %idf,

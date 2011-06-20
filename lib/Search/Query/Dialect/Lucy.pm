@@ -13,11 +13,11 @@ use Lucy::Search::ORQuery;
 use Lucy::Search::PhraseQuery;
 use Lucy::Search::RangeQuery;
 use Lucy::Search::TermQuery;
-use Lucy::Search::ProximityQuery;
+use LucyX::Search::ProximityQuery;
 use Search::Query::Dialect::Lucy::NOTWildcardQuery;
 use Search::Query::Dialect::Lucy::WildcardQuery;
 
-our $VERSION = '0.14';
+our $VERSION = '0.01';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -510,11 +510,8 @@ FIELD: for my $name (@fields) {
                 include_lower => 1,
                 include_upper => 1,
             );
-            push(
-                @buf,
-                Lucy::Search::NOTQuery->new(
-                    negated_query => $range_query
-                )
+            push( @buf,
+                Lucy::Search::NOTQuery->new( negated_query => $range_query )
             );
             next FIELD;
         }
@@ -539,10 +536,7 @@ FIELD: for my $name (@fields) {
 
                 # if stemmer, apply only to prefix if at all.
                 my $stemmer;
-                if ($field->analyzer->isa(
-                        'Lucy::Analysis::PolyAnalyzer')
-                    )
-                {
+                if ( $field->analyzer->isa('Lucy::Analysis::PolyAnalyzer') ) {
                     my $analyzers = $field->analyzer->get_analyzers();
                     for my $ana (@$analyzers) {
                         if ( $ana->isa('Lucy::Analysis::Stemmer') ) {
@@ -551,9 +545,7 @@ FIELD: for my $name (@fields) {
                         }
                     }
                 }
-                elsif (
-                    $field->analyzer->isa('Lucy::Analysis::Stemmer') )
-                {
+                elsif ( $field->analyzer->isa('Lucy::Analysis::Stemmer') ) {
                     $stemmer = $field->analyzer;
                 }
 
@@ -589,7 +581,7 @@ FIELD: for my $name (@fields) {
                     while ( $n_values-- > 0 ) {
                         push(
                             @permutations,
-                            Lucy::Search::ProximityQuery->new(
+                            LucyX::Search::ProximityQuery->new(
                                 field  => $name,
                                 terms  => [@values],    # new array
                                 within => $proximity,
@@ -610,7 +602,7 @@ FIELD: for my $name (@fields) {
                 else {
                     push(
                         @buf,
-                        Lucy::Search::ProximityQuery->new(
+                        LucyX::Search::ProximityQuery->new(
                             field  => $name,
                             terms  => \@values,
                             within => $proximity,

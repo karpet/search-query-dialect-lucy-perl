@@ -6,7 +6,7 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Search::Query::Dialect::Lucy::Compiler;
 
-our $VERSION = '0.14';
+our $VERSION = '0.01';
 
 =head1 NAME
 

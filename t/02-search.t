@@ -6,13 +6,13 @@ use Data::Dump qw( dump );
 use File::Temp qw( tempdir );
 my $invindex = tempdir( CLEANUP => 1 );
 
-use KinoSearch::Schema;
-use KinoSearch::FieldType::FullTextType;
-use KinoSearch::Analysis::PolyAnalyzer;
-use KinoSearch::Indexer;
-my $schema   = KinoSearch::Schema->new;
-my $analyzer = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en', );
-my $fulltext = KinoSearch::FieldType::FullTextType->new(
+use Lucy::Schema;
+use Lucy::FieldType::FullTextType;
+use Lucy::Analysis::PolyAnalyzer;
+use Lucy::Indexer;
+my $schema   = Lucy::Schema->new;
+my $analyzer = Lucy::Analysis::PolyAnalyzer->new( language => 'en', );
+my $fulltext = Lucy::FieldType::FullTextType->new(
     analyzer => $analyzer,
     sortable => 1,
 );
@@ -21,7 +21,7 @@ $schema->spec_field( name => 'color',  type => $fulltext );
 $schema->spec_field( name => 'date',   type => $fulltext );
 $schema->spec_field( name => 'option', type => $fulltext );
 
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = Lucy::Indexer->new(
     index    => $invindex,
     schema   => $schema,
     create   => 1,
@@ -39,7 +39,7 @@ ok( my $parser = Search::Query::Parser->new(
         },
         query_class_opts =>
             { default_field => [qw( title color date option )], },
-        dialect        => 'KSx',
+        dialect        => 'Lucy',
         croak_on_error => 1,
     ),
     "new parser"
@@ -90,7 +90,7 @@ for my $doc ( keys %docs ) {
 
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $invindex, );
+my $searcher = Lucy::Searcher->new( index => $invindex, );
 
 # search
 my %queries = (
@@ -151,7 +151,7 @@ for my $str ( sort keys %queries ) {
         diag( dump($query) );
 
         diag( dump( $query->as_ks_query ) );
-        if ( $query->as_ks_query->isa('KinoSearch::Search::NOTQuery') ) {
+        if ( $query->as_ks_query->isa('Lucy::Search::NOTQuery') ) {
             diag( "negated_query: "
                     . dump( $query->as_ks_query->get_negated_query ) );
         }

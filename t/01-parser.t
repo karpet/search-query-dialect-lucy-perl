@@ -5,8 +5,8 @@ use warnings;
 use Test::More tests => 75;
 use Data::Dump qw( dump );
 
-use KinoSearch::Analysis::PolyAnalyzer;
-my $analyzer = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en', );
+use Lucy::Analysis::PolyAnalyzer;
+my $analyzer = Lucy::Analysis::PolyAnalyzer->new( language => 'en', );
 
 use_ok('Search::Query::Parser');
 
@@ -17,7 +17,7 @@ ok( my $parser = Search::Query::Parser->new(
             name  => { analyzer => $analyzer },
         },
         default_field  => 'name',
-        dialect        => 'KSx',
+        dialect        => 'Lucy',
         croak_on_error => 1,
     ),
     "new parser"
@@ -30,7 +30,7 @@ ok( my $query1 = $parser->parse('foo=BAR'), "query1" );
 is( $query1, qq/foo:BAR/, "query1 string" );
 
 ok( my $ks_query1 = $query1->as_ks_query(), "as_ks_query" );
-ok( $ks_query1->isa('KinoSearch::Search::TermQuery'),
+ok( $ks_query1->isa('Lucy::Search::TermQuery'),
     "ks_query isa TermQuery" );
 is( $ks_query1->to_string, "foo:bar", "KS query analyzer applied" );
 
@@ -53,7 +53,7 @@ is( $query4, qq/(name:john OR foo:bar) AND (NOT color:red)/,
 
 ok( my $parser2 = Search::Query::Parser->new(
         fields         => [qw( first_name last_name email )],
-        dialect        => 'KSx',
+        dialect        => 'Lucy',
         croak_on_error => 1,
         default_boolop => '',
     ),
@@ -70,7 +70,7 @@ is( $query6, qq/"joe smith"/, "query6 string" );
 
 ok( my $parser3 = Search::Query::Parser->new(
         fields         => [qw( foo bar )],
-        dialect        => 'KSx',
+        dialect        => 'Lucy',
         croak_on_error => 1,
     ),
     "parser3"
@@ -93,7 +93,7 @@ is( $gardenq,
 
 ok( my $parser4 = Search::Query::Parser->new(
         fields         => [qw( foo )],
-        dialect        => 'KSx',
+        dialect        => 'Lucy',
         croak_on_error => 1,
     ),
     "strict parser4"
@@ -115,7 +115,7 @@ ok( my $parser5 = Search::Query::Parser->new(
             foo => { type => 'char' },
             bar => { type => 'int' },
         },
-        dialect          => 'KSx',
+        dialect          => 'Lucy',
         query_class_opts => { fuzzify => 1, },
         croak_on_error   => 1,
     ),
@@ -131,7 +131,7 @@ is( $query8, qq/bar:1*/, "query8 fuzzy int no wildcard string" );
 
 ok( my $parser6 = Search::Query::Parser->new(
         fields           => [qw( foo )],
-        dialect          => 'KSx',
+        dialect          => 'Lucy',
         query_class_opts => { fuzzify => 1, },
         croak_on_error   => 1,
     ),
@@ -144,7 +144,7 @@ is( $query9, qq/foo:bar*/, "query9 string" );
 
 # range expansion
 ok( my $range_parser = Search::Query::Parser->new(
-        dialect       => 'KSx',
+        dialect       => 'Lucy',
         fields        => [qw( date swishdefault )],
         default_field => 'swishdefault',
     ),
@@ -201,7 +201,7 @@ ok( my $parser_alias_for = Search::Query->parser(
             field1 => { alias_for => 'field2', },
             field2 => 1,
         },
-        dialect => 'KSx',
+        dialect => 'Lucy',
     ),
     "new parser2"
 );
@@ -216,7 +216,7 @@ is( $query_alias_for2, qq/foo/, "query expanded omits aliases" );
 
 # wildcards
 ok( my $fuzzy_parser = Search::Query->parser(
-        dialect          => 'KSx',
+        dialect          => 'Lucy',
         croak_on_error   => 1,
         fields           => [qw( field1 )],
         query_class_opts => { default_field => 'field1' }
@@ -235,7 +235,7 @@ ok( $@, "lone_wildcard croaks" );
 #diag($@);
 
 # no fields defined
-ok( my $nofields_parser = Search::Query->parser( dialect => 'KSx', ),
+ok( my $nofields_parser = Search::Query->parser( dialect => 'Lucy', ),
     "nofields parser" );
 ok( my $nofields_query = $nofields_parser->parse('foo'), "parse nofields" );
 is( $nofields_query, "foo", "stringify nofields_query" );
@@ -252,7 +252,7 @@ is( $simple_not, qq/NOT foo/, "stringify NOT foo" );
 # complex NOT
 ok( my $complex_not_parser = Search::Query->parser(
         fields  => [qw( one two three four five )],
-        dialect => 'KSx',
+        dialect => 'Lucy',
     ),
     "new complex not parser"
 );

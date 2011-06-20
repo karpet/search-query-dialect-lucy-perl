@@ -17,7 +17,7 @@ use LucyX::Search::ProximityQuery;
 use Search::Query::Dialect::Lucy::NOTWildcardQuery;
 use Search::Query::Dialect::Lucy::WildcardQuery;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -36,8 +36,8 @@ Search::Query::Dialect::Lucy - Lucy query dialect
 
  my $query = Search::Query->parser( dialect => 'Lucy' )->parse('foo');
  print $query;
- my $ks_query = $query->as_ks_query();
- my $hits = $ks_searcher->hits( query => $ks_query );
+ my $lucy_query = $query->as_lucy_query();
+ my $hits = $lucy_searcher->hits( query => $lucy_query );
 
 =head1 DESCRIPTION
 
@@ -267,7 +267,7 @@ NAME: for my $name (@fields) {
         }
 
         $self->debug
-            and warn "ks string: "
+            and warn "lucy string: "
             . dump [ $name, $op, $prefix, $quote, $value ];
 
         # invert fuzzy
@@ -338,7 +338,7 @@ NAME: for my $name (@fields) {
         . ( scalar(@buf) > 1 ? ')' : '' );
 }
 
-=head2 as_ks_query
+=head2 as_lucy_query
 
 Returns the Dialect object as a Lucy::Search::Query-based object.
 The Dialect object is walked and converted to a
@@ -346,47 +346,47 @@ Lucy::Searcher-compatible tree.
 
 =cut
 
-my %ks_class_map = (
+my %lucy_class_map = (
     '+' => 'AND',
     ''  => 'OR',
     '-' => 'NOT',
 );
 
-sub as_ks_query {
+sub as_lucy_query {
     my $self = shift;
     my $tree = shift || $self;
 
     my @q;
     foreach my $prefix ( '+', '', '-' ) {
         my @clauses;
-        my $joiner = $ks_class_map{$prefix};
+        my $joiner = $lucy_class_map{$prefix};
         next unless exists $tree->{$prefix};
         my $has_explicit_fields = 0;
         for my $clause ( @{ $tree->{$prefix} } ) {
-            push( @clauses, $self->_ks_clause( $clause, $prefix ) );
+            push( @clauses, $self->_lucy_clause( $clause, $prefix ) );
             if ( defined $clause->{field} ) {
                 $has_explicit_fields++;
             }
         }
         next if !@clauses;
 
-        my $ks_class = 'Lucy::Search::' . $joiner . 'Query';
-        my $ks_param_name = $joiner eq 'NOT' ? 'negated_query' : 'children';
+        my $lucy_class = 'Lucy::Search::' . $joiner . 'Query';
+        my $lucy_param_name = $joiner eq 'NOT' ? 'negated_query' : 'children';
         @clauses = grep {defined} @clauses;
         if ( $prefix eq '-' and @clauses > 1 ) {
-            $ks_class      = 'Lucy::Search::ANDQuery';
-            $ks_param_name = 'children';
+            $lucy_class      = 'Lucy::Search::ANDQuery';
+            $lucy_param_name = 'children';
         }
 
-        #warn "$ks_class -> new( $ks_param_name => " . dump \@clauses;
+        #warn "$lucy_class -> new( $lucy_param_name => " . dump \@clauses;
         #warn "has_explicit_fields=$has_explicit_fields";
 
         if ( @clauses == 1 ) {
             if (    $prefix eq '-'
                 and $has_explicit_fields
-                and !$clauses[0]->isa($ks_class) )
+                and !$clauses[0]->isa($lucy_class) )
             {
-                push @q, $ks_class->new( $ks_param_name => $clauses[0] );
+                push @q, $lucy_class->new( $lucy_param_name => $clauses[0] );
             }
             else {
                 push @q, $clauses[0];
@@ -394,25 +394,25 @@ sub as_ks_query {
         }
         elsif ( !$has_explicit_fields and $prefix eq '-' ) {
 
-            warn "do not wrap \@clauses in a $ks_class";
+            warn "do not wrap \@clauses in a $lucy_class";
             push @q, @clauses;
 
         }
         else {
-            push @q, $ks_class->new( $ks_param_name => \@clauses );
+            push @q, $lucy_class->new( $lucy_param_name => \@clauses );
         }
 
     }
 
     my $clause_joiner   = $self->_get_clause_joiner;
-    my $ks_class_joiner = 'Lucy::Search::' . $clause_joiner . 'Query';
+    my $lucy_class_joiner = 'Lucy::Search::' . $clause_joiner . 'Query';
 
     return @q == 1
         ? $q[0]
-        : $ks_class_joiner->new( children => \@q );
+        : $lucy_class_joiner->new( children => \@q );
 }
 
-sub _ks_clause {
+sub _lucy_clause {
     my $self   = shift;
     my $clause = shift;
     my $prefix = shift;
@@ -421,7 +421,7 @@ sub _ks_clause {
     #warn "prefix = '$prefix'";
 
     if ( $clause->{op} eq '()' ) {
-        return $self->as_ks_query( $clause->{value} );
+        return $self->as_lucy_query( $clause->{value} );
     }
 
     # make sure we have a field
@@ -475,7 +475,7 @@ FIELD: for my $name (@fields) {
         }
 
         $self->debug
-            and warn "as_ks_query: "
+            and warn "as_lucy_query: "
             . dump [ $name, $op, $prefix, $quote, $value ];
 
         # range is un-analyzed
@@ -715,8 +715,8 @@ FIELD: for my $name (@fields) {
         return $buf[0];
     }
     my $joiner = $prefix eq '-' ? 'AND' : 'OR';
-    my $ks_class = 'Lucy::Search::' . $joiner . 'Query';
-    return $ks_class->new( children => \@buf );
+    my $lucy_class = 'Lucy::Search::' . $joiner . 'Query';
+    return $lucy_class->new( children => \@buf );
 }
 
 =head2 field_class

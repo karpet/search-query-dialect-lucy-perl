@@ -6,7 +6,7 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Search::Query::Dialect::Lucy::Compiler;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -15,8 +15,8 @@ Search::Query::Dialect::Lucy::WildcardQuery - Lucy query extension
 =head1 SYNOPSIS
 
  my $query = Search::Query->parser( dialect => 'Lucy' )->parse('foo*');
- my $ks_query = $query->as_ks_query();
- # $ks_query isa WildcardQuery
+ my $lucy_query = $query->as_lucy_query();
+ # $lucy_query isa WildcardQuery
 
 =head1 DESCRIPTION
 

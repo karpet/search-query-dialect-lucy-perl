@@ -4,7 +4,7 @@ use warnings;
 use base qw( Lucy::Search::Matcher );
 use Carp;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # Inside-out member vars.
 my ( %doc_ids, %pos, %boosts, %sim, %term_freqs );

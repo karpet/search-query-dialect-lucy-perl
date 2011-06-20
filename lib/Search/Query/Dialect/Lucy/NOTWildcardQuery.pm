@@ -4,7 +4,7 @@ use warnings;
 use base qw( Search::Query::Dialect::Lucy::WildcardQuery );
 use Carp;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -13,8 +13,8 @@ Search::Query::Dialect::Lucy::NOTWildcardQuery - Lucy query extension
 =head1 SYNOPSIS
 
  my $query = Search::Query->parser( dialect => 'Lucy' )->parse('myfield!:foo*');
- my $ks_query = $query->as_ks_query();
- # $ks_query isa NOTWildcardQuery
+ my $lucy_query = $query->as_lucy_query();
+ # $lucy_query isa NOTWildcardQuery
 
 =head1 DESCRIPTION
 
@@ -26,7 +26,7 @@ then a NOTWildcardQuery is equivalent to this:
 
  $term !~ m/$query/
 
-B<Note> that the as_ks_query() method in Dialect::Lucy does B<not> use
+B<Note> that the as_lucy_query() method in Dialect::Lucy does B<not> use
 this class but instead wraps a WildcardQuery in a NOTQuery, which allows
 for matching null values as well. So currently this class is not used
 by Search::Query::Dialect::Lucy but is included here in case someone finds it 

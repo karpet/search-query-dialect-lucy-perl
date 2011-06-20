@@ -137,7 +137,7 @@ for my $str ( sort keys %queries ) {
 
     #diag($query);
     my $hits = $searcher->hits(
-        query      => $query->as_ks_query(),
+        query      => $query->as_lucy_query(),
         offset     => 0,
         num_wanted => 5,                       # more than we have
     );
@@ -151,27 +151,27 @@ for my $str ( sort keys %queries ) {
         diag($query);
         diag( dump($query) );
 
-        diag( dump( $query->as_ks_query ) );
-        if ( $query->as_ks_query->isa('Lucy::Search::NOTQuery') ) {
+        diag( dump( $query->as_lucy_query ) );
+        if ( $query->as_lucy_query->isa('Lucy::Search::NOTQuery') ) {
             diag( "negated_query: "
-                    . dump( $query->as_ks_query->get_negated_query ) );
+                    . dump( $query->as_lucy_query->get_negated_query ) );
         }
-        diag( dump $query->as_ks_query->dump );
+        diag( dump $query->as_lucy_query->dump );
 
     }
 }
 
-# exercise some as_ks_query options
+# exercise some as_lucy_query options
 my $query = $parser->parse(qq/"orange red"~3/);
 $query->ignore_order_in_proximity(1);
 
 #$query->debug(1);
-my $ks_query = $query->as_ks_query();
+my $ks_query = $query->as_lucy_query();
 my $hits
     = $searcher->hits( query => $ks_query, offset => 0, num_wanted => 5 );
 is( $hits->total_hits, 1, "proximity order ignored" );
 $query->ignore_order_in_proximity(0);
-$ks_query = $query->as_ks_query();
+$ks_query = $query->as_lucy_query();
 $hits = $searcher->hits( query => $ks_query, offset => 0, num_wanted => 5 );
 is( $hits->total_hits, 0, "proximity order respected" );
 
@@ -193,7 +193,7 @@ $parser->term_expander(
 );
 
 ok( my $wild_query = $parser->parse(qq/title=doc*/), "parse query" );
-$ks_query = $wild_query->as_ks_query();
+$ks_query = $wild_query->as_lucy_query();
 
 #diag($wild_query);
 #diag(dump $ks_query->dump);

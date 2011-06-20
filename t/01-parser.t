@@ -29,7 +29,7 @@ ok( my $query1 = $parser->parse('foo=BAR'), "query1" );
 
 is( $query1, qq/foo:BAR/, "query1 string" );
 
-ok( my $ks_query1 = $query1->as_ks_query(), "as_ks_query" );
+ok( my $ks_query1 = $query1->as_lucy_query(), "as_lucy_query" );
 ok( $ks_query1->isa('Lucy::Search::TermQuery'),
     "ks_query isa TermQuery" );
 is( $ks_query1->to_string, "foo:bar", "KS query analyzer applied" );
@@ -224,7 +224,7 @@ ok( my $fuzzy_parser = Search::Query->parser(
     "new fuzzy parser"
 );
 ok( my $fuzzy_query = $fuzzy_parser->parse('foo*'), "parse foo*" );
-ok( my $fuzzy_ks    = $fuzzy_query->as_ks_query,    "fuzzy as_ks_query" );
+ok( my $fuzzy_ks    = $fuzzy_query->as_lucy_query,    "fuzzy as_lucy_query" );
 is( $fuzzy_ks->to_string, $fuzzy_query->stringify,
     "stringification matches" );
 
@@ -270,7 +270,7 @@ is( $complex_str, $complex_not, "complex not query round-trip" );
 #diag($complex_not);
 #diag( dump $complex_not );
 
-is( $complex_not->as_ks_query()->to_string(),
+is( $complex_not->as_lucy_query()->to_string(),
     $complex_ks, "complex_not as KS string" );
 
 ####################################################

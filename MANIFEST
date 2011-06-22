@@ -1,9 +1,5 @@
 Changes
 lib/Search/Query/Dialect/Lucy.pm
-lib/Search/Query/Dialect/Lucy/Compiler.pm
-lib/Search/Query/Dialect/Lucy/NOTWildcardQuery.pm
-lib/Search/Query/Dialect/Lucy/Scorer.pm
-lib/Search/Query/Dialect/Lucy/WildcardQuery.pm
 lib/Search/Query/Field/Lucy.pm
 Makefile.PL
 MANIFEST

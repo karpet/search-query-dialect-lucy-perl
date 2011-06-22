@@ -14,8 +14,8 @@ use Lucy::Search::PhraseQuery;
 use Lucy::Search::RangeQuery;
 use Lucy::Search::TermQuery;
 use LucyX::Search::ProximityQuery;
-use Search::Query::Dialect::Lucy::NOTWildcardQuery;
-use Search::Query::Dialect::Lucy::WildcardQuery;
+use LucyX::Search::NOTWildcardQuery;
+use LucyX::Search::WildcardQuery;
 
 our $VERSION = '0.02';
 
@@ -404,7 +404,7 @@ sub as_lucy_query {
 
     }
 
-    my $clause_joiner   = $self->_get_clause_joiner;
+    my $clause_joiner     = $self->_get_clause_joiner;
     my $lucy_class_joiner = 'Lucy::Search::' . $clause_joiner . 'Query';
 
     return @q == 1
@@ -634,21 +634,11 @@ FIELD: for my $name (@fields) {
             {
                 $term .= $wildcard unless $term =~ m/\Q$wildcard/;
 
-                # instead of a NOTWildcardQuery, wrap the WildcardQuery
-                # in a NOTQuery. This is for matching things like:
-                #
-                #  somefield!=?*
-                #
-                # where a NOTWildcardQuery would naturally only look
-                # at terms that exist in the lexicon, and not terms
-                # that do not.
-                #
-
                 # if the prefix is already NOT do not apply a double negative
                 if ( $prefix eq '-' ) {
                     push(
                         @buf,
-                        Search::Query::Dialect::Lucy::WildcardQuery->new(
+                        LucyX::Search::WildcardQuery->new(
                             field => $name,
                             term  => $term,
                         )
@@ -657,13 +647,9 @@ FIELD: for my $name (@fields) {
                 else {
                     push(
                         @buf,
-                        Lucy::Search::NOTQuery->new(
-                            negated_query =>
-                                Search::Query::Dialect::Lucy::WildcardQuery
-                                ->new(
-                                field => $name,
-                                term  => $term,
-                                )
+                        LucyX::Search::WildcardQuery->new(
+                            field => $name,
+                            term  => $term,
                         )
                     );
 
@@ -678,7 +664,7 @@ FIELD: for my $name (@fields) {
 
                 push(
                     @buf,
-                    Search::Query::Dialect::Lucy::WildcardQuery->new(
+                    LucyX::Search::WildcardQuery->new(
                         field => $name,
                         term  => $term,
                     )
@@ -689,11 +675,9 @@ FIELD: for my $name (@fields) {
             elsif ( $op eq '!:' ) {
                 push(
                     @buf,
-                    Lucy::Search::NOTQuery->new(
-                        negated_query => Lucy::Search::TermQuery->new(
-                            field => $name,
-                            term  => $term,
-                        )
+                    LucyX::Search::NOTWildcardQuery->new(
+                        field => $name,
+                        term  => $term,
                     )
                 );
             }

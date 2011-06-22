@@ -3,7 +3,12 @@ Revision history for Search-Query-Dialect-KSx
 0.01    19 June 2011
         First version, ported from KSx for name change.
 
-0.02    xxx
+0.02    21 June 2011
         Clean up some missed name changes from 0.01.
         Yank out Wildcard classes and fork them into LucyX::Search::Wildcard.
+
+0.03    21 June 2011
+        * fix detection of stemmer class name. 
+          SnowballStemmer in Lucy (was Stemmer under KinoSearch)
+
 

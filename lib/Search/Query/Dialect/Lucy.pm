@@ -17,7 +17,7 @@ use LucyX::Search::ProximityQuery;
 use LucyX::Search::NOTWildcardQuery;
 use LucyX::Search::WildcardQuery;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -539,13 +539,13 @@ FIELD: for my $name (@fields) {
                 if ( $field->analyzer->isa('Lucy::Analysis::PolyAnalyzer') ) {
                     my $analyzers = $field->analyzer->get_analyzers();
                     for my $ana (@$analyzers) {
-                        if ( $ana->isa('Lucy::Analysis::Stemmer') ) {
+                        if ( $ana->isa('Lucy::Analysis::SnowballStemmer') ) {
                             $stemmer = $ana;
                             last;
                         }
                     }
                 }
-                elsif ( $field->analyzer->isa('Lucy::Analysis::Stemmer') ) {
+                elsif ( $field->analyzer->isa('Lucy::Analysis::SnowballStemmer') ) {
                     $stemmer = $field->analyzer;
                 }
 

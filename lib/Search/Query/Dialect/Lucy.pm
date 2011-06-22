@@ -644,6 +644,15 @@ FIELD: for my $name (@fields) {
                         )
                     );
                 }
+                elsif ( $op =~ m/^\!/ ) {
+                    push(
+                        @buf,
+                        LucyX::Search::NOTWildcardQuery->new(
+                            field => $name,
+                            term  => $term,
+                        )
+                    );
+                }
                 else {
                     push(
                         @buf,
@@ -652,7 +661,6 @@ FIELD: for my $name (@fields) {
                             term  => $term,
                         )
                     );
-
                 }
             }
 
@@ -675,9 +683,11 @@ FIELD: for my $name (@fields) {
             elsif ( $op eq '!:' ) {
                 push(
                     @buf,
-                    LucyX::Search::NOTWildcardQuery->new(
-                        field => $name,
-                        term  => $term,
+                    Lucy::Search::NOTQuery->new(
+                        negated_query => Lucy::Search::TermQuery->new(
+                            field => $name,
+                            term  => $term,
+                        )
                     )
                 );
             }

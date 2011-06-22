@@ -11,6 +11,7 @@ use Lucy::Plan::FullTextType;
 use Lucy::Analysis::PolyAnalyzer;
 use Lucy::Index::Indexer;
 use Lucy::Search::IndexSearcher;
+
 my $schema   = Lucy::Plan::Schema->new;
 my $analyzer = Lucy::Analysis::PolyAnalyzer->new( language => 'en', );
 my $fulltext = Lucy::Plan::FullTextType->new(

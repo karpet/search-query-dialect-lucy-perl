@@ -5,3 +5,5 @@ Revision history for Search-Query-Dialect-KSx
 
 0.02    xxx
         Clean up some missed name changes from 0.01.
+        Yank out Wildcard classes and fork them into LucyX::Search::Wildcard.
+

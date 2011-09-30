@@ -11,4 +11,6 @@ Revision history for Search-Query-Dialect-KSx
         * fix detection of stemmer class name. 
           SnowballStemmer in Lucy (was Stemmer under KinoSearch)
 
+0.04    29 Sept 2011
+        * debug mode verbosity conditional on debug level.
 

@@ -17,7 +17,7 @@ use LucyX::Search::ProximityQuery;
 use LucyX::Search::NOTWildcardQuery;
 use LucyX::Search::WildcardQuery;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -106,6 +106,8 @@ sub init {
     if ( $self->{default_field} and !ref( $self->{default_field} ) ) {
         $self->{default_field} = [ $self->{default_field} ];
     }
+    
+    $self->{debug} = 0 unless defined $self->{debug};
 
     return $self;
 }
@@ -266,7 +268,7 @@ NAME: for my $name (@fields) {
             next NAME;
         }
 
-        $self->debug
+        ( $self->debug > 1 )
             and warn "lucy string: "
             . dump [ $name, $op, $prefix, $quote, $value ];
 
@@ -545,7 +547,9 @@ FIELD: for my $name (@fields) {
                         }
                     }
                 }
-                elsif ( $field->analyzer->isa('Lucy::Analysis::SnowballStemmer') ) {
+                elsif (
+                    $field->analyzer->isa('Lucy::Analysis::SnowballStemmer') )
+                {
                     $stemmer = $field->analyzer;
                 }
 

@@ -439,7 +439,7 @@ sub _lucy_clause {
         ? $clause->{value}
         : $self->_doctor_value($clause);
 
-    # if we have no fields, we can't proceed, because KS
+    # if we have no fields, we can't proceed, because Lucy
     # requires a field for every term.
     if ( !@fields ) {
         croak

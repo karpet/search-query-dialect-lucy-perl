@@ -14,5 +14,5 @@ Revision history for Search-Query-Dialect-KSx
 0.04    29 Sept 2011
         * debug mode verbosity conditional on debug level.
 
-0.05    xxx
+0.05    23 June 2012
         * allow parent Parser->default_field to be a string, not an arrayref

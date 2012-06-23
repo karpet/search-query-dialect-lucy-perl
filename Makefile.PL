@@ -21,7 +21,7 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'                   => 0,
-        'Search::Query'                => 0.19,
+        'Search::Query'                => 0.21,
         'Lucy'                         => 0.001000,
         'LucyX::Search::WildcardQuery' => 0.01,
     },
@@ -32,12 +32,13 @@ WriteMakefile(
     (   $MM_Version <= 6.44 ? ()
         : ( META_MERGE => {
                 resources => {
-                    license  => 'http://dev.perl.org/licenses/',
-                    homepage => 'http://perl.peknet.com/wiki/SearchTools',
+                    license => 'http://dev.perl.org/licenses/',
+                    homepage =>
+                        'https://github.com/karpet/search-query-dialect-lucy-perl',
                     bugtracker =>
                         'http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-Query-Dialect-Lucy',
                     repository =>
-                        'http://svn.peknet.com/perl/Search-Query-Dialect-Lucy',
+                        'https://github.com/karpet/search-query-dialect-lucy-perl',
                 },
             }
         )

@@ -16,3 +16,6 @@ Revision history for Search-Query-Dialect-KSx
 
 0.05    23 June 2012
         * allow parent Parser->default_field to be a string, not an arrayref
+
+0.06    25 July 2012
+        * fix README and some meta changes in Makefile.PL

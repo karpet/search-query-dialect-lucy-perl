@@ -12,8 +12,24 @@ use Lucy::Analysis::PolyAnalyzer;
 use Lucy::Index::Indexer;
 use Lucy::Search::IndexSearcher;
 
-my $schema   = Lucy::Plan::Schema->new;
-my $analyzer = Lucy::Analysis::PolyAnalyzer->new( language => 'en', );
+my $schema     = Lucy::Plan::Schema->new;
+my $stopfilter = Lucy::Analysis::SnowballStopFilter->new( language => 'en', );
+my $stemmer    = Lucy::Analysis::SnowballStemmer->new( language => 'en' );
+my $case_folder = Lucy::Analysis::CaseFolder->new;
+my $tokenizer   = Lucy::Analysis::RegexTokenizer->new;
+my $analyzer    = Lucy::Analysis::PolyAnalyzer->new(
+    analyzers => [
+        $case_folder,
+        $tokenizer,
+
+        # our existing tests have too many stopwords to refactor
+        # but this is helpful when debugging related code in Dialect::Lucy
+
+        #$stopfilter,
+
+        $stemmer,
+    ]
+);
 my $fulltext = Lucy::Plan::FullTextType->new(
     analyzer => $analyzer,
     sortable => 1,
@@ -137,10 +153,15 @@ for my $str ( sort keys %queries ) {
     }
 
     #diag($query);
+    my $lucy_query = $query->as_lucy_query();
+    if ( !$lucy_query ) {
+        diag("No lucy_query for $str");
+        next;
+    }
     my $hits = $searcher->hits(
-        query      => $query->as_lucy_query(),
+        query      => $lucy_query,
         offset     => 0,
-        num_wanted => 5,                       # more than we have
+        num_wanted => 5,             # more than we have
     );
 
     is( $hits->total_hits, $hits_expected, "$str = $hits_expected" );

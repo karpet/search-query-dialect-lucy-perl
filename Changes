@@ -16,3 +16,6 @@ Revision history for Search-Query-Dialect-KSx
 
 0.05    23 June 2012
         * allow parent Parser->default_field to be a string, not an arrayref
+
+0.06    xxx
+        * add support for StopFilter analyzer

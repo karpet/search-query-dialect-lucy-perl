@@ -17,7 +17,7 @@ use LucyX::Search::ProximityQuery;
 use LucyX::Search::NOTWildcardQuery;
 use LucyX::Search::WildcardQuery;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -373,7 +373,13 @@ sub as_lucy_query {
         next unless exists $tree->{$prefix};
         my $has_explicit_fields = 0;
         for my $clause ( @{ $tree->{$prefix} } ) {
-            push( @clauses, $self->_lucy_clause( $clause, $prefix ) );
+            my @lucy_clauses = $self->_lucy_clause( $clause, $prefix );
+            if ( !@lucy_clauses ) {
+
+                #warn "No lucy_clauses for $clause";
+                next;
+            }
+            push( @clauses, @lucy_clauses );
             if ( defined $clause->{field} ) {
                 $has_explicit_fields++;
             }
@@ -412,6 +418,11 @@ sub as_lucy_query {
             push @q, $lucy_class->new( $lucy_param_name => \@clauses );
         }
 
+    }
+
+    # possible we end up with nothing if StopFilter applied
+    if ( !@q ) {
+        return ();
     }
 
     my $clause_joiner     = $self->_get_clause_joiner;
@@ -492,9 +503,9 @@ FIELD: for my $name (@fields) {
             next FIELD;
         }
 
-        $self->debug
-            and warn "as_lucy_query: "
-            . dump [ $name, $op, $prefix, $quote, $value ];
+        #$self->debug
+        #    and warn "as_lucy_query: "
+        #    . dump [ $name, $op, $prefix, $quote, $value ];
 
         # range is un-analyzed
         if ( $op eq '..' ) {
@@ -534,7 +545,7 @@ FIELD: for my $name (@fields) {
             next FIELD;
         }
 
-        $self->debug and warn "value before:$value";
+        #$self->debug and warn "value before:$value";
         my @values = ($value);
 
         # if the field has an analyzer, use it on $value
@@ -547,6 +558,7 @@ FIELD: for my $name (@fields) {
                 # and strip the wildcards off.
 
                 # assume CaseFolder
+                # TODO do not assume
                 $value = lc($value);
 
                 # split on whitespace, not token regex
@@ -554,6 +566,7 @@ FIELD: for my $name (@fields) {
 
                 # if stemmer, apply only to prefix if at all.
                 my $stemmer;
+
                 if ( $field->analyzer->isa('Lucy::Analysis::PolyAnalyzer') ) {
                     my $analyzers = $field->analyzer->get_analyzers();
                     for my $ana (@$analyzers) {
@@ -561,6 +574,7 @@ FIELD: for my $name (@fields) {
                             $stemmer = $ana;
                             last;
                         }
+
                     }
                 }
                 elsif (
@@ -587,10 +601,23 @@ FIELD: for my $name (@fields) {
             else {
                 @values = grep { defined and length }
                     @{ $field->analyzer->split($value) };
+
+                # if we have a StopFilter in our analyzer chain,
+                # it's possible the @values ends up empty.
+                # The Lucy QueryParser will handle that case
+                # by trying twice with a NoMatchQuery.
+                # TODO what should our behavior be?
+                # a stopword will never match since the word
+                # won't be in the index...
             }
         }
 
-        $self->debug and warn "value after :" . dump( \@values );
+        #$self->debug and warn "value after :" . dump( \@values );
+
+        # StopFilter or similar case
+        if ( !@values ) {
+            return ();
+        }
 
         if ( $is_phrase or @values > 1 ) {
             if ($proximity) {
@@ -645,6 +672,7 @@ FIELD: for my $name (@fields) {
 
             # TODO why would this happen?
             if ( !defined $term or !length $term ) {
+                warn "No term defined";
                 next FIELD;
             }
 
@@ -724,6 +752,11 @@ FIELD: for my $name (@fields) {
             }
 
         }    # TERM
+    }
+
+    # possible that stop_filter results in nothing in buffer
+    if ( !@buf ) {
+        return ();
     }
     if ( @buf == 1 ) {
         return $buf[0];

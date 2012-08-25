@@ -4,9 +4,20 @@ use warnings;
 use base qw( Search::Query::Field );
 use Scalar::Util qw( blessed );
 
-__PACKAGE__->mk_accessors(qw( type is_int analyzer ));
+__PACKAGE__->mk_accessors(
+    qw(
+        type
+        is_int
+        analyzer
+        range_query_class
+        term_query_class
+        phrase_query_class
+        proximity_query_class
+        wildcard_query_class
+        )
+);
 
-our $VERSION = '0.07';
+our $VERSION = '0.07_01';
 
 =head1 NAME
 
@@ -46,7 +57,27 @@ Set if C<type> matches m/int|num|date/.
 
 =item analyzer
 
-Set to a Lucy::Analysis::Analyzer-based object (optional).
+Set to a L<Lucy::Analysis::Analyzer>-based object (optional).
+
+=item range_query_class
+
+Defaults to L<Lucy::Search::RangeQuery>.
+
+=item term_query_class
+
+Defaults to L<Lucy::Search::TermQuery>.
+
+=item phrase_query_class
+
+Defaults to L<Lucy::Search::PhraseQuery>.
+
+=item proximity_query_class
+
+Defaults to L<Lucy::Search::ProximityQuery>.
+
+=item wildcard_query_class
+
+Defaults to L<LucyX::Search::WildcardQuery>.
 
 =back
 
@@ -68,6 +99,12 @@ sub init {
         $self->{is_int} = 0;
     }
 
+    # class names to use when transforming a Dialect to a Lucy query
+    $self->{range_query_class}     ||= 'Lucy::Search::RangeQuery';
+    $self->{term_query_class}      ||= 'Lucy::Search::TermQuery';
+    $self->{phrase_query_class}    ||= 'Lucy::Search::PhraseQuery';
+    $self->{proximity_query_class} ||= 'LucyX::Search::ProximityQuery';
+    $self->{wildcard_query_class}  ||= 'LucyX::Search::WildcardQuery';
 }
 
 1;

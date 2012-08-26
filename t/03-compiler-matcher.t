@@ -13,6 +13,9 @@ use Lucy::Analysis::PolyAnalyzer;
 use Lucy::Index::Indexer;
 use Lucy::Search::IndexSearcher;
 
+##########################################################################
+#    custom query/compiler/matcher troika
+##########################################################################
 {
 
     package MyTermQuery;
@@ -23,6 +26,8 @@ use Lucy::Search::IndexSearcher;
         my %args        = @_;
         my $subordinate = delete $args{subordinate};    # new in Lucy 0.2.2
         $args{parent} = $self;
+
+        #warn Data::Dump::dump( \%args );
         my $compiler = MyCompiler->new(%args);
         $compiler->normalize unless $subordinate;
 
@@ -36,28 +41,44 @@ use Lucy::Search::IndexSearcher;
     use base qw( Lucy::Search::Compiler );
 
     my %reader;
+    my %searchable;
+    my %doc_freq;
+    my %idf;
+    my %raw_weight;
+
+    sub new {
+        my $class      = shift;
+        my %args       = @_;
+        my $searchable = $args{searchable} || $args{searcher};
+        if ( !$searchable ) {
+            Carp::croak "searcher required";
+        }
+
+        #warn Data::Dump::dump( \%args );
+        my $self = $class->SUPER::new(%args);
+        $searchable{$$self} = $searchable;
+        return $self;
+    }
 
     sub make_matcher {
         my $self = shift;
         my %args = @_;
 
-        #Data::Dump::dump( \%args );
+        my $need_score = delete $args{need_score};
         $reader{$$self} = delete $args{reader};
 
-        # Retrieve low-level components LexiconReader and PostingListReader.
-        my $lex_reader
-            = $reader{$$self}->obtain("Lucy::Index::LexiconReader");
         my $plist_reader
             = $reader{$$self}->obtain("Lucy::Index::PostingListReader");
+        my $lex_reader
+            = $reader{$$self}->obtain("Lucy::Index::LexiconReader");
+        my $parent = $self->get_parent;
+        my $term   = $parent->get_term;
+        my $field  = $parent->get_field;
 
-        # Acquire a Lexicon and seek it to our query string.
-        my $parent  = $self->get_parent;
-        my $term    = $parent->get_term;
-        my $field   = $parent->get_field;
+        #warn "$self field=$field term=$term";
         my $lexicon = $lex_reader->lexicon( field => $field );
         return unless $lexicon;
 
-        #warn "term=$term";
         my $posting_list = $plist_reader->posting_list(
             field => $field,
             term  => $term,
@@ -66,6 +87,7 @@ use Lucy::Search::IndexSearcher;
 
         my %hits;
         my $doc_reader = $reader{$$self}->obtain("Lucy::Index::DocReader");
+        my $searchable = $searchable{$$self};
         while ( my $doc_id = $posting_list->next ) {
             my $posting = $posting_list->get_posting;
             $hits{$doc_id} = { freq => $posting->get_freq, };
@@ -75,6 +97,22 @@ use Lucy::Search::IndexSearcher;
             $hits{$doc_id}->{magic} = $doc->{option};
         }
 
+        $doc_freq{$$self} = scalar( keys %hits );
+        return unless $doc_freq{$$self};
+
+        # Calculate and store the IDF
+        my $max_doc = $searchable->doc_max;
+        my $idf     = $idf{$$self}
+            = $max_doc
+            ? ( $searchable->get_schema->fetch_type($field)->get_boost
+                + log( $max_doc / ( 1 + $doc_freq{$$self} ) ) )
+            : $searchable->get_schema->fetch_type($field)->get_boost;
+
+        $raw_weight{$$self} = $idf * $parent->get_boost;
+
+        #warn
+        #    "term=$term doc_freq=$doc_freq{$$self} raw_weight=$raw_weight{$$self} idf=$idf";
+
         return MyMatcher->new(
             %args,
             hits     => \%hits,
@@ -82,9 +120,49 @@ use Lucy::Search::IndexSearcher;
         );
     }
 
+    sub sum_of_squared_weights {
+        my $self = shift;
+        return exists $raw_weight{$$self} ? $raw_weight{$$self}**2 : '1.0';
+    }
+
+    sub normalize {
+        my $self   = shift;
+        my $sim    = $self->get_similarity;
+        my $factor = $self->sum_of_squared_weights;
+        $factor = $sim->query_norm($factor);
+
+        #warn "raw_weight=$raw_weight{$$self}";
+        #warn "idf=$idf{$$self}";
+        #warn "factor=$factor";
+        $self->apply_norm_factor($factor);
+    }
+
+    sub apply_norm_factor {
+        my $self   = shift;
+        my $factor = shift;
+        if ( !defined $factor ) {
+            Carp::croak "factor required";
+        }
+        if ( exists $raw_weight{$$self} ) {
+            return $raw_weight{$$self} * $idf{$$self} * $factor;
+        }
+        else {
+            return 1.0;
+        }
+    }
+
+    sub get_doc_freq {
+        my $self = shift;
+        return $doc_freq{$$self};
+    }
+
     sub DELETE {
         my $self = shift;
         delete $reader{$$self};
+        delete $doc_freq{$$self};
+        delete $idf{$$self};
+        delete $searchable{$$self};
+        delete $raw_weight{$$self};
     }
 }
 
@@ -105,7 +183,6 @@ use Lucy::Search::IndexSearcher;
         my %args  = @_;
 
         #Data::Dump::dump( \%args );
-        delete $args{need_score};
         my $compiler = delete $args{compiler};
         my $hits     = delete $args{hits};
         my $self     = $class->SUPER::new(%args);
@@ -117,6 +194,7 @@ use Lucy::Search::IndexSearcher;
         $sim{$$self}      = $compiler->get_similarity;
 
         return $self;
+
     }
 
     sub next {
@@ -147,24 +225,27 @@ use Lucy::Search::IndexSearcher;
         # custom scoring section.
         # get the magic
         my $magic = $hits{$$self}->{$doc_id}->{magic};
+        my $magic_score;
         if ( !$magic ) {
-            return 0;
+            $magic_score = 0;
         }
         elsif ( $magic eq 'a' ) {
-            return 100;
+            $magic_score = 100;
         }
         elsif ( $magic eq 'b' ) {
-            return 200;
+            $magic_score = 200;
         }
         elsif ( $magic eq 'c' ) {
-            return 300;
+            $magic_score = 300;
         }
         elsif ( $magic eq 'd' ) {
-            return 400;
+            $magic_score = 400;
         }
         else {
-            return $base_score;
+            $magic_score = $base_score;
         }
+        #warn "magic_score=$magic_score";
+        return $magic_score;
     }
 
     sub DELETE {
@@ -179,6 +260,9 @@ use Lucy::Search::IndexSearcher;
 
 }
 
+#############################################################################
+#     setup temp index
+#############################################################################
 my $schema     = Lucy::Plan::Schema->new;
 my $stopfilter = Lucy::Analysis::SnowballStopFilter->new( language => 'en', );
 my $stemmer    = Lucy::Analysis::SnowballStemmer->new( language => 'en' );
@@ -201,6 +285,7 @@ my $fulltext = Lucy::Plan::FullTextType->new(
     analyzer => $analyzer,
     sortable => 1,
 );
+$schema->spec_field( name => 'uri',    type => $fulltext );
 $schema->spec_field( name => 'title',  type => $fulltext );
 $schema->spec_field( name => 'color',  type => $fulltext );
 $schema->spec_field( name => 'date',   type => $fulltext );
@@ -213,22 +298,27 @@ my $indexer = Lucy::Index::Indexer->new(
     truncate => 1,
 );
 
+#######################################################################
+#   set up our parser tests
+#######################################################################
 use_ok('Search::Query::Parser');
 
 ok( my $parser = Search::Query::Parser->new(
         fields => {
-            title  => { analyzer => $analyzer },
-            color  => { analyzer => $analyzer },
+            title => { analyzer => $analyzer },
+            color => {
+                analyzer         => $analyzer,
+                term_query_class => 'MyTermQuery',
+            },
             date   => { analyzer => $analyzer },
             option => {
                 analyzer         => $analyzer,
                 term_query_class => 'MyTermQuery',
             },
         },
-        query_class_opts =>
-            { default_field => [qw( title color date option )], },
-        dialect        => 'Lucy',
-        croak_on_error => 1,
+        query_class_opts => { default_field => [qw( color )], },
+        dialect          => 'Lucy',
+        croak_on_error   => 1,
     ),
     "new parser"
 );
@@ -266,33 +356,52 @@ my %docs = (
     },
 );
 
-# set up the index
+# create the index
 for my $doc ( keys %docs ) {
-    $indexer->add_doc( $docs{$doc} );
+    $indexer->add_doc( { uri => $doc, %{ $docs{$doc} } } );
 }
 
 $indexer->commit;
+
+########################################################################
+#           run the tests
+########################################################################
 
 my $searcher = Lucy::Search::IndexSearcher->new( index => $invindex, );
 
 # search
 my %queries = (
-    'option=a'                   => 100,
-    'option=b'                   => 200,
-    'option=c'                   => 300,
-    'option=d'                   => 400,
-    'option!=(a or b or c or d)' => 0,
+    'option=a'                      => { uri => 'doc1', score => 100 },
+    'option=b'                      => { uri => 'doc2', score => 200 },
+    'option=c'                      => { uri => 'doc4', score => 300 },
+    'option=d'                      => { uri => 'doc5', score => 400 },
+    'option!=(a and b and c and d)' => { uri => 'doc3', score => 0 },
+    'white'                         => [
+        {   uri   => 'doc4',
+            score => 300,
+        },
+        {   uri   => 'doc3',
+            score => 0,
+        },
+    ]
 );
 
+my $expected_tests = 0;
 for my $str ( sort keys %queries ) {
     my $query = $parser->parse($str);
 
     #$query->debug(1);
 
-    my $score_expected = $queries{$str};
+    my $expected = $queries{$str};
+    if ( ref $expected ne 'ARRAY' ) {
+        $expected = [$expected];
+    }
+
+    $expected_tests += scalar @$expected;
 
     #diag($query);
     my $lucy_query = $query->as_lucy_query();
+    #diag( dump $lucy_query->dump );
     if ( !$lucy_query ) {
         diag("No lucy_query for $str");
         next;
@@ -303,9 +412,24 @@ for my $str ( sort keys %queries ) {
         num_wanted => 5,             # more than we have
     );
 
-    my $result = $hits->next;
-    is( $result->get_score, $score_expected, "got expected score for $str" );
+    my $i = 0;
+    while ( my $result = $hits->next ) {
+        is( $result->get_score,
+            $expected->[$i]->{score},
+            sprintf(
+                "doc '%s' got expected score for '%s'",
+                $result->{uri}, $str
+            )
+        );
+        is( $result->{uri},
+            $expected->[$i]->{uri},
+            "got rank expected for $result->{uri}"
+        );
+        $i++;
+    }
 }
 
+#diag("expected_tests=$expected_tests");
+
 # allow for adding new queries without adjusting test count
-done_testing( scalar( keys %queries ) + 2 );
+done_testing( ( $expected_tests * 2 ) + 2 );

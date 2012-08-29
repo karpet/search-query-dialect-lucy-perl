@@ -110,8 +110,8 @@ use Lucy::Search::IndexSearcher;
 
         $raw_weight{$$self} = $idf * $parent->get_boost;
 
-        #warn
-        #    "term=$term doc_freq=$doc_freq{$$self} raw_weight=$raw_weight{$$self} idf=$idf";
+#warn
+#    "term=$term doc_freq=$doc_freq{$$self} raw_weight=$raw_weight{$$self} idf=$idf";
 
         return MyMatcher->new(
             %args,
@@ -163,6 +163,7 @@ use Lucy::Search::IndexSearcher;
         delete $idf{$$self};
         delete $searchable{$$self};
         delete $raw_weight{$$self};
+        $self->SUPER::DESTROY;
     }
 }
 
@@ -244,6 +245,7 @@ use Lucy::Search::IndexSearcher;
         else {
             $magic_score = $base_score;
         }
+
         #warn "magic_score=$magic_score";
         return $magic_score;
     }
@@ -256,6 +258,7 @@ use Lucy::Search::IndexSearcher;
         delete $doc_ids{$$self};
         delete $boosts{$$self};
         delete $sim{$$self};
+        $self->SUPER::DESTROY;
     }
 
 }
@@ -401,6 +404,7 @@ for my $str ( sort keys %queries ) {
 
     #diag($query);
     my $lucy_query = $query->as_lucy_query();
+
     #diag( dump $lucy_query->dump );
     if ( !$lucy_query ) {
         diag("No lucy_query for $str");

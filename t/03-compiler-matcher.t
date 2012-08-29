@@ -156,7 +156,7 @@ use Lucy::Search::IndexSearcher;
         return $doc_freq{$$self};
     }
 
-    sub DELETE {
+    sub DESTROY {
         my $self = shift;
         delete $reader{$$self};
         delete $doc_freq{$$self};
@@ -248,7 +248,7 @@ use Lucy::Search::IndexSearcher;
         return $magic_score;
     }
 
-    sub DELETE {
+    sub DESTROY {
         my $self = shift;
         delete $compiler{$$self};
         delete $hits{$$self};

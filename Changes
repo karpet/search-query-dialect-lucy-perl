@@ -23,8 +23,9 @@ Revision history for Search-Query-Dialect-KSx
 0.07    21 Aug 2012
         * add support for StopFilter analyzer
 
-0.08    xxx
+0.08    23 May 2013
         * add *_query_class methods to Dialect, to support
           custom Lucy query classes.
+        * fix phrase negation bug (NOT "foo bar")
 
 

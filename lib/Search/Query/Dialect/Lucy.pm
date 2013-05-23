@@ -17,7 +17,7 @@ use LucyX::Search::ProximityQuery;
 use LucyX::Search::NOTWildcardQuery;
 use LucyX::Search::WildcardQuery;
 
-our $VERSION = '0.07_01';
+our $VERSION = '0.08';
 
 __PACKAGE__->mk_accessors(
     qw(

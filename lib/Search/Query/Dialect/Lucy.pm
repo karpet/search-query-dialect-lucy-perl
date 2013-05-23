@@ -220,7 +220,7 @@ sub stringify_clause {
     }
 
     # make sure we have a field
-    my $default_field 
+    my $default_field
         = $self->default_field
         || $self->parser->default_field
         || undef;    # not empty string or 0
@@ -658,13 +658,30 @@ FIELD: for my $name (@fields) {
                 }
             }
             else {
-                push(
-                    @buf,
-                    $field->phrase_query_class->new(
-                        field => $name,
-                        terms => \@values,
-                    )
-                );
+                # invert
+                if ( $op eq '!:' ) {
+                    push(
+                        @buf,
+                        Lucy::Search::NOTQuery->new(
+                            negated_query => $field->phrase_query_class->new(
+                                field => $name,
+                                terms => \@values,
+                            )
+                        )
+                    );
+                }
+
+                # standard
+                else {
+
+                    push(
+                        @buf,
+                        $field->phrase_query_class->new(
+                            field => $name,
+                            terms => \@values,
+                        )
+                    );
+                }
             }
         }
         else {

@@ -59,6 +59,7 @@ ok( my $parser = Search::Query::Parser->new(
             { default_field => [qw( title color date option )], },
         dialect        => 'Lucy',
         croak_on_error => 1,
+        null_term      => 'NULL',
     ),
     "new parser"
 );
@@ -130,6 +131,8 @@ my %queries = (
     '"i doc1"~2'                                         => 1,
     'option!=?*'                                         => 1,
     'NOT option:?*'                                      => 1,
+    'option=NULL'                                        => 1,
+    'option!=NULL'                                       => 4,
     '(title=am) and (date!=20100301 and date!=20100329)' => 2,   # doc3 & doc4
     '(re* OR gree*) AND title=am'                        => 2,
     '(re* OR gree*)'                                     => 2,
@@ -161,7 +164,7 @@ for my $str ( sort keys %queries ) {
     my $hits = $searcher->hits(
         query      => $lucy_query,
         offset     => 0,
-        num_wanted => 5,             # more than we have
+        num_wanted => 10,            # more than we have
     );
 
     is( $hits->total_hits, $hits_expected, "$str = $hits_expected" );

@@ -16,8 +16,10 @@ use Lucy::Search::TermQuery;
 use LucyX::Search::ProximityQuery;
 use LucyX::Search::NOTWildcardQuery;
 use LucyX::Search::WildcardQuery;
+use LucyX::Search::NullTermQuery;
+use LucyX::Search::AnyTermQuery;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -159,7 +161,7 @@ sub _doctor_value {
 
     my $value = $clause->{value};
 
-    if ( $self->fuzzify ) {
+    if ( defined $value and $self->fuzzify ) {
         $value .= '*' unless $value =~ m/[\*]/;
     }
 
@@ -258,7 +260,7 @@ sub stringify_clause {
     if ( $prefix eq '-' ) {
         $op = '!' . $op unless $op =~ m/^!/;
     }
-    if ( $value =~ m/[\*\?]|\Q$wildcard/ ) {
+    if ( defined $value and $value =~ m/[\*\?]|\Q$wildcard/ ) {
         $op =~ s/:/~/g;
         if ( $value eq '*' or $value eq '?' ) {
             if ( !$self->allow_single_wildcards ) {
@@ -278,7 +280,11 @@ NAME: for my $name (@fields) {
 
         ( $self->debug > 1 )
             and warn "lucy string: "
-            . dump [ $name, $op, $prefix, $quote, $value ];
+            . dump [ $name, $op, $prefix, $quote, $value, ];
+
+        if ( !defined $value ) {
+            $value = 'NULL';
+        }
 
         # invert fuzzy
         if ( $op eq '!~' ) {
@@ -481,7 +487,7 @@ sub _lucy_clause {
     if ( $prefix eq '-' ) {
         $op = '!' . $op unless $op =~ m/^!/;
     }
-    if ( $value =~ m/[\*\?]|\Q$wildcard/ ) {
+    if ( defined $value and $value =~ m/[\*\?]|\Q$wildcard/ ) {
         $op =~ s/:/~/;
         if ( $value eq '*' or $value eq '?' ) {
             if ( !$self->allow_single_wildcards ) {
@@ -506,6 +512,18 @@ FIELD: for my $name (@fields) {
         #$self->debug
         #    and warn "as_lucy_query: "
         #    . dump [ $name, $op, $prefix, $quote, $value ];
+
+        # NULL
+        if ( !defined $value ) {
+            if ( $op eq '!:' ) {
+                push @buf, $field->anyterm_query_class->new( field => $name );
+            }
+            else {
+                push @buf,
+                    $field->nullterm_query_class->new( field => $name );
+            }
+            next FIELD;
+        }
 
         # range is un-analyzed
         if ( $op eq '..' ) {

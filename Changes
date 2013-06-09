@@ -28,4 +28,5 @@ Revision history for Search-Query-Dialect-KSx
           custom Lucy query classes.
         * fix phrase negation bug (NOT "foo bar")
 
-
+0.09    xxx
+        * add support for null_term feature of Search::Query::Parser >= 0.22

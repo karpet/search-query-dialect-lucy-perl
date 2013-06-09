@@ -21,9 +21,10 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'                   => 0,
-        'Search::Query'                => 0.21,
+        'Search::Query'                => 0.22,
         'Lucy'                         => 0.001000,
         'LucyX::Search::WildcardQuery' => 0.01,
+        'LucyX::Search::NullTermQuery' => 0.001,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'Search-Query-Dialect-Lucy-*' },

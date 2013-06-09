@@ -14,10 +14,12 @@ __PACKAGE__->mk_accessors(
         phrase_query_class
         proximity_query_class
         wildcard_query_class
+        nullterm_query_class
+        anyterm_query_class
         )
 );
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 =head1 NAME
 
@@ -79,6 +81,14 @@ Defaults to L<Lucy::Search::ProximityQuery>.
 
 Defaults to L<LucyX::Search::WildcardQuery>.
 
+=item nullterm_query_class
+
+Defaults to L<LucyX::Search::NullTermQuery>.
+
+=item anyterm_query_class
+
+Defaults to L<LucyX::Search::AnyTermQuery>.
+
 =back
 
 =cut
@@ -105,6 +115,8 @@ sub init {
     $self->{phrase_query_class}    ||= 'Lucy::Search::PhraseQuery';
     $self->{proximity_query_class} ||= 'LucyX::Search::ProximityQuery';
     $self->{wildcard_query_class}  ||= 'LucyX::Search::WildcardQuery';
+    $self->{nullterm_query_class}  ||= 'LucyX::Search::NullTermQuery';
+    $self->{anyterm_query_class}   ||= 'LucyX::Search::AnyTermQuery';
 }
 
 1;

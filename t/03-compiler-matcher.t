@@ -56,7 +56,6 @@ use Lucy::Search::IndexSearcher;
         my $self   = shift;
         my $method = our $AUTOLOAD;
         $method =~ s/.*://;
-        return if $method eq 'DESTROY';
         my $child = $child_query{$$self};
         if ( $child->can($method) ) {
             return $child->$method(@_);
@@ -103,7 +102,6 @@ use Lucy::Search::IndexSearcher;
         my $self   = shift;
         my $method = our $AUTOLOAD;
         $method =~ s/.*://;
-        return if $method eq 'DESTROY';
         my $child = $child_compiler{$$self};
         if ( $child->can($method) ) {
             return $child->$method(@_);
@@ -178,7 +176,6 @@ use Lucy::Search::IndexSearcher;
         my $self   = shift;
         my $method = our $AUTOLOAD;
         $method =~ s/.*://;
-        return if $method eq 'DESTROY';
         my $child = $child_matcher{$$self};
         if ( $child->can($method) ) {
             return $child->$method(@_);

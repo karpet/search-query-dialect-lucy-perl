@@ -16,22 +16,53 @@ use Lucy::Search::IndexSearcher;
 ##########################################################################
 #    custom query/compiler/matcher troika
 ##########################################################################
+# delegation pattern suggested by Marvin at
+# http://markmail.org/message/4y4titlbwd5slgmf
 {
 
     package MyTermQuery;
-    use base qw( Lucy::Search::TermQuery );
+    use base qw( Lucy::Search::Query );
+    use Lucy::Search::TermQuery;
+
+    my %child_query;
+
+    sub new {
+        my ( $class, %args ) = @_;
+        my $child = Lucy::Search::TermQuery->new(%args);
+        my $self  = $class->SUPER::new();
+        $child_query{$$self} = $child;
+        return $self;
+    }
 
     sub make_compiler {
-        my $self        = shift;
-        my %args        = @_;
-        my $subordinate = delete $args{subordinate};    # new in Lucy 0.2.2
-        $args{parent} = $self;
-
-        #warn Data::Dump::dump( \%args );
-        my $compiler = MyCompiler->new(%args);
-        $compiler->normalize unless $subordinate;
-
+        my ( $self, %args ) = @_;
+        my $child_compiler = $child_query{$$self}->make_compiler(%args);
+        my $compiler       = MyCompiler->new(
+            child    => $child_compiler,
+            searcher => $args{searcher},
+            parent   => $self,
+        );
+        $compiler->normalize unless $args{subordinate};
         return $compiler;
+    }
+
+    sub DESTROY {
+        my $self = shift;
+        delete $child_query{$$self};
+        $self->SUPER::DESTROY;
+    }
+
+    sub AUTOLOAD {
+        my $self   = shift;
+        my $method = our $AUTOLOAD;
+        $method =~ s/.*://;
+        return if $method eq 'DESTROY';
+        my $child = $child_query{$$self};
+        if ( $child->can($method) ) {
+            return $child->$method(@_);
+        }
+
+        Carp::croak("no such method $method for $child");
     }
 }
 
@@ -40,130 +71,45 @@ use Lucy::Search::IndexSearcher;
     package MyCompiler;
     use base qw( Lucy::Search::Compiler );
 
-    my %reader;
-    my %searchable;
-    my %doc_freq;
-    my %idf;
-    my %raw_weight;
+    my %child_compiler;
 
     sub new {
-        my $class      = shift;
-        my %args       = @_;
-        my $searchable = $args{searchable} || $args{searcher};
-        if ( !$searchable ) {
-            Carp::croak "searcher required";
-        }
-
-        #warn Data::Dump::dump( \%args );
-        my $self = $class->SUPER::new(%args);
-        $searchable{$$self} = $searchable;
+        my ( $class, %args ) = @_;
+        my $child = delete $args{child};
+        my $self  = $class->SUPER::new(%args);
+        $child_compiler{$$self} = $child;
         return $self;
     }
 
     sub make_matcher {
-        my $self = shift;
-        my %args = @_;
-
-        my $need_score = delete $args{need_score};
-        $reader{$$self} = delete $args{reader};
-
-        my $plist_reader
-            = $reader{$$self}->obtain("Lucy::Index::PostingListReader");
-        my $lex_reader
-            = $reader{$$self}->obtain("Lucy::Index::LexiconReader");
-        my $parent = $self->get_parent;
-        my $term   = $parent->get_term;
-        my $field  = $parent->get_field;
-
-        #warn "$self field=$field term=$term";
-        my $lexicon = $lex_reader->lexicon( field => $field );
-        return unless $lexicon;
-
-        my $posting_list = $plist_reader->posting_list(
-            field => $field,
-            term  => $term,
-        );
-        return unless $posting_list;
-
-        my %hits;
-        my $doc_reader = $reader{$$self}->obtain("Lucy::Index::DocReader");
-        my $searchable = $searchable{$$self};
-        while ( my $doc_id = $posting_list->next ) {
-            my $posting = $posting_list->get_posting;
-            $hits{$doc_id} = { freq => $posting->get_freq, };
-
-            # here's where we do magic scoring
-            my $doc = $doc_reader->fetch_doc($doc_id);
-            $hits{$doc_id}->{magic} = $doc->{option};
-        }
-
-        $doc_freq{$$self} = scalar( keys %hits );
-        return unless $doc_freq{$$self};
-
-        # Calculate and store the IDF
-        my $max_doc = $searchable->doc_max;
-        my $idf     = $idf{$$self}
-            = $max_doc
-            ? ( $searchable->get_schema->fetch_type($field)->get_boost
-                + log( $max_doc / ( 1 + $doc_freq{$$self} ) ) )
-            : $searchable->get_schema->fetch_type($field)->get_boost;
-
-        $raw_weight{$$self} = $idf * $parent->get_boost;
-
-#warn
-#    "term=$term doc_freq=$doc_freq{$$self} raw_weight=$raw_weight{$$self} idf=$idf";
-
+        my ( $self, %args ) = @_;
+        my $child_matcher = $child_compiler{$$self}->make_matcher(%args);
+        return unless $child_matcher;
+        my $sort_reader = $args{reader}->obtain("Lucy::Index::SortReader");
+        my $sort_cache  = $sort_reader->fetch_sort_cache('option');
         return MyMatcher->new(
-            %args,
-            hits     => \%hits,
-            compiler => $self
+            child      => $child_matcher,
+            sort_cache => $sort_cache,
         );
-    }
-
-    sub sum_of_squared_weights {
-        my $self = shift;
-        return exists $raw_weight{$$self} ? $raw_weight{$$self}**2 : '1.0';
-    }
-
-    sub normalize {
-        my $self   = shift;
-        my $sim    = $self->get_similarity;
-        my $factor = $self->sum_of_squared_weights;
-        $factor = $sim->query_norm($factor);
-
-        #warn "raw_weight=$raw_weight{$$self}";
-        #warn "idf=$idf{$$self}";
-        #warn "factor=$factor";
-        $self->apply_norm_factor($factor);
-    }
-
-    sub apply_norm_factor {
-        my $self   = shift;
-        my $factor = shift;
-        if ( !defined $factor ) {
-            Carp::croak "factor required";
-        }
-        if ( exists $raw_weight{$$self} ) {
-            return $raw_weight{$$self} * $idf{$$self} * $factor;
-        }
-        else {
-            return 1.0;
-        }
-    }
-
-    sub get_doc_freq {
-        my $self = shift;
-        return $doc_freq{$$self};
     }
 
     sub DESTROY {
         my $self = shift;
-        delete $reader{$$self};
-        delete $doc_freq{$$self};
-        delete $idf{$$self};
-        delete $searchable{$$self};
-        delete $raw_weight{$$self};
+        delete $child_compiler{$$self};
         $self->SUPER::DESTROY;
+    }
+
+    sub AUTOLOAD {
+        my $self   = shift;
+        my $method = our $AUTOLOAD;
+        $method =~ s/.*://;
+        return if $method eq 'DESTROY';
+        my $child = $child_compiler{$$self};
+        if ( $child->can($method) ) {
+            return $child->$method(@_);
+        }
+
+        Carp::croak("no such method $method for $child");
     }
 }
 
@@ -172,93 +118,73 @@ use Lucy::Search::IndexSearcher;
     package MyMatcher;
     use base qw( Lucy::Search::Matcher );
 
-    my %compiler;
-    my %hits;
-    my %pos;
-    my %doc_ids;
-    my %boosts;
-    my %sim;
+    my %child_matcher;
+    my %sort_cache;
 
     sub new {
-        my $class = shift;
-        my %args  = @_;
-
-        #Data::Dump::dump( \%args );
-        my $compiler = delete $args{compiler};
-        my $hits     = delete $args{hits};
-        my $self     = $class->SUPER::new(%args);
-        $compiler{$$self} = $compiler;
-        $hits{$$self}     = $hits;
-        $pos{$$self}      = -1;
-        $doc_ids{$$self}  = [ sort { $a <=> $b } keys %$hits ];
-        $boosts{$$self}   = $compiler->get_boost;
-        $sim{$$self}      = $compiler->get_similarity;
+        my $class      = shift;
+        my %args       = @_;
+        my $child      = delete $args{child};
+        my $sort_cache = delete $args{sort_cache};
+        my $self       = $class->SUPER::new(%args);
+        $child_matcher{$$self} = $child;
+        $sort_cache{$$self}    = $sort_cache;
 
         return $self;
-
     }
 
-    sub next {
-        my $self    = shift;
-        my $doc_ids = $doc_ids{$$self};
-        return 0 if $pos{$$self} >= $#$doc_ids;
-        return $doc_ids->[ ++$pos{$$self} ];
-    }
-
-    sub get_doc_id {
-        my $self = shift;
-        my $pos  = $pos{$$self};
-        my $dids = $doc_ids{$$self};
-        return $pos < scalar @$dids ? $$dids[$pos] : 0;
-    }
+    my %magic_scores = (
+        a => 100,
+        b => 200,
+        c => 300,
+        d => 400,
+    );
 
     sub score {
-        my $self      = shift;
-        my $pos       = $pos{$$self};
-        my $dids      = $doc_ids{$$self};
-        my $boost     = $boosts{$$self};
-        my $doc_id    = $$dids[$pos];
-        my $term_freq = $hits{$$self}->{$doc_id};
+        my $self = shift;
 
-        #Carp::carp "doc_id=$doc_id  term_freq=$term_freq  boost=$boost";
-        my $base_score = ( $boost * $sim{$$self}->tf($term_freq) ) / 10;
-
-        # custom scoring section.
-        # get the magic
-        my $magic = $hits{$$self}->{$doc_id}->{magic};
-        my $magic_score;
-        if ( !$magic ) {
-            $magic_score = 0;
-        }
-        elsif ( $magic eq 'a' ) {
-            $magic_score = 100;
-        }
-        elsif ( $magic eq 'b' ) {
-            $magic_score = 200;
-        }
-        elsif ( $magic eq 'c' ) {
-            $magic_score = 300;
-        }
-        elsif ( $magic eq 'd' ) {
-            $magic_score = 400;
-        }
-        else {
-            $magic_score = $base_score;
+        # Try for special score.
+        my $doc_id = $self->get_doc_id;
+        if ( $sort_cache{$$self} ) {
+            my $ord = $sort_cache{$$self}->ordinal($doc_id);
+            my $value = $sort_cache{$$self}->value( 'ord' => $ord );
+            if ($value) {
+                my $magic_score = $magic_scores{$value};
+                return $magic_score || 0;
+            }
         }
 
-        #warn "magic_score=$magic_score";
-        return $magic_score;
+        return 0;
+
+        # Fall back to child Matcher's score.
+        # in our case, unpredictable for tests.
+        #return $child_matcher{$$self}->score;
     }
 
     sub DESTROY {
         my $self = shift;
-        delete $compiler{$$self};
-        delete $hits{$$self};
-        delete $pos{$$self};
-        delete $doc_ids{$$self};
-        delete $boosts{$$self};
-        delete $sim{$$self};
+        delete $child_matcher{$$self};
+        delete $sort_cache{$$self};
         $self->SUPER::DESTROY;
+    }
+
+    # Delegate next() and get_doc_id() to the child Matcher explicitly,
+    # rather than relying on AUTOLOAD,
+    # since they are required abstract methods
+    sub next       { $child_matcher{ ${ +shift } }->next }
+    sub get_doc_id { $child_matcher{ ${ +shift } }->get_doc_id }
+
+    sub AUTOLOAD {
+        my $self   = shift;
+        my $method = our $AUTOLOAD;
+        $method =~ s/.*://;
+        return if $method eq 'DESTROY';
+        my $child = $child_matcher{$$self};
+        if ( $child->can($method) ) {
+            return $child->$method(@_);
+        }
+
+        Carp::croak("no such method $method for $child");
     }
 
 }
@@ -413,7 +339,7 @@ for my $str ( sort keys %queries ) {
     my $hits = $searcher->hits(
         query      => $lucy_query,
         offset     => 0,
-        num_wanted => 5,             # more than we have
+        num_wanted => 10,            # more than we have
     );
 
     my $i = 0;

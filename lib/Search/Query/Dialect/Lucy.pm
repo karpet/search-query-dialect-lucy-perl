@@ -509,15 +509,17 @@ FIELD: for my $name (@fields) {
             next FIELD;
         }
 
-        $self->debug
-            and warn "as_lucy_query: "
-            . dump {
-            name   => $name,
-            op     => $op,
-            prefix => $prefix,
-            quote  => $quote,
-            value  => $value
-            };
+        if ( $self->debug ) {
+            warn "as_lucy_query:\n";
+            warn dump(
+                {   name   => $name,
+                    op     => $op,
+                    prefix => $prefix,
+                    quote  => $quote,
+                    value  => $value
+                }
+            ) . "\n";
+        }
 
         # NULL
         if ( !defined $value ) {

@@ -509,13 +509,19 @@ FIELD: for my $name (@fields) {
             next FIELD;
         }
 
-        #$self->debug
-        #    and warn "as_lucy_query: "
-        #    . dump [ $name, $op, $prefix, $quote, $value ];
+        $self->debug
+            and warn "as_lucy_query: "
+            . dump {
+            name   => $name,
+            op     => $op,
+            prefix => $prefix,
+            quote  => $quote,
+            value  => $value
+            };
 
         # NULL
         if ( !defined $value ) {
-            if ( $op eq '!:' ) {
+            if ( $op eq '!:' or ( $prefix eq '-' and $op eq ':' ) ) {
                 push @buf, $field->anyterm_query_class->new( field => $name );
             }
             else {

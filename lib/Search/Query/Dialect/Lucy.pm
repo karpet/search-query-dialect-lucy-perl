@@ -523,7 +523,9 @@ FIELD: for my $name (@fields) {
 
         # NULL
         if ( !defined $value ) {
-            if ( $op eq '!:' or ( $prefix eq '-' and $op eq ':' ) ) {
+            if ( $op eq '!:' ) {
+                # TODO avoid double negative, since if $prefix == '-' this 
+                # gets wrapped in a NOTQuery
                 push @buf, $field->anyterm_query_class->new( field => $name );
             }
             else {

@@ -524,13 +524,29 @@ FIELD: for my $name (@fields) {
         # NULL
         if ( !defined $value ) {
             if ( $op eq '!:' ) {
-                # TODO avoid double negative, since if $prefix == '-' this 
-                # gets wrapped in a NOTQuery
-                push @buf, $field->anyterm_query_class->new( field => $name );
+
+                if ( $prefix eq '-' ) {
+
+                    # appears to be a double negative, but necessary
+                    # to get the logic and serialization correct.
+                    # e.g. NOT foo:NULL
+                    push @buf,
+                        Lucy::Search::NOTQuery->new(
+                        negated_query => $field->nullterm_query_class->new(
+                            field => $name
+                        )
+                        );
+                }
+                else {
+                    push @buf,
+                        $field->anyterm_query_class->new( field => $name );
+                }
             }
             else {
+
                 push @buf,
                     $field->nullterm_query_class->new( field => $name );
+
             }
             next FIELD;
         }

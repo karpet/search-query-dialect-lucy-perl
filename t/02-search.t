@@ -133,6 +133,7 @@ my %queries = (
     'NOT option:?*'                                      => 1,
     'option=NULL'                                        => 1,
     'option!=NULL'                                       => 4,
+    'NOT option:NULL'                                    => 4,
     '(title=am) and (date!=20100301 and date!=20100329)' => 2,   # doc3 & doc4
     '(re* OR gree*) AND title=am'                        => 2,
     '(re* OR gree*)'                                     => 2,
@@ -172,8 +173,8 @@ for my $str ( sort keys %queries ) {
     if ( $hits->total_hits != $hits_expected or $query->debug ) {
 
         $query->debug(1);
-        diag($str);
-        diag($query);
+        diag('str:' . $str);
+        diag('query:' . $query);
         diag( dump($query) );
 
         diag( dump( $query->as_lucy_query ) );

@@ -520,11 +520,12 @@ FIELD: for my $name (@fields) {
         if ( $self->debug ) {
             warn "as_lucy_query:\n";
             warn dump(
-                {   name   => $name,
-                    op     => $op,
-                    prefix => $prefix,
-                    quote  => $quote,
-                    value  => $value
+                {   name      => $name,
+                    op        => $op,
+                    prefix    => $prefix,
+                    quote     => $quote,
+                    value     => $value,
+                    clause_op => $clause->{op},
                 }
             ) . "\n";
         }

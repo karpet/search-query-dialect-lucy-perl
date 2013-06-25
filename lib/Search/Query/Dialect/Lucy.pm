@@ -551,9 +551,9 @@ FIELD: for my $name (@fields) {
                     }
                     else {
                         # true double negative
-                        # e.g. NOT foo!:NULL
+                        # e.g. NOT foo!:NULL  => foo:NULL
                         push @buf,
-                            $field->anyterm_query_class->new(
+                            $field->nullterm_query_class->new(
                             field => $name );
 
                     }

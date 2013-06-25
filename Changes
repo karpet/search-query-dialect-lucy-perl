@@ -30,3 +30,7 @@ Revision history for Search-Query-Dialect-KSx
 
 0.09    08 June 2013
         * add support for null_term feature of Search::Query::Parser >= 0.22
+
+0.10    xxx
+        * fix NOT foo:NULL case
+        * fix serialization of double negative NOT foo!:bar

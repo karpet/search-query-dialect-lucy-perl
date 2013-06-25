@@ -19,7 +19,7 @@ use LucyX::Search::WildcardQuery;
 use LucyX::Search::NullTermQuery;
 use LucyX::Search::AnyTermQuery;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -306,12 +306,20 @@ NAME: for my $name (@fields) {
 
         # invert
         elsif ( $op eq '!:' ) {
-            push(
-                @buf,
-                join( '',
-                    '(NOT ', $name, ':', qq/$quote$value$quote$proximity/,
-                    ')' )
-            );
+
+            # double negative
+            if ( $prefix eq '-' and $clause->{op} eq '!:' ) {
+                push @buf,
+                    join( '', $name, ':', qq/$quote$value$quote$proximity/ );
+            }
+            else {
+                push(
+                    @buf,
+                    join( '',
+                        '(NOT ', $name, ':', qq/$quote$value$quote$proximity/,
+                        ')' )
+                );
+            }
         }
 
         # range
@@ -524,18 +532,32 @@ FIELD: for my $name (@fields) {
         # NULL
         if ( !defined $value ) {
             if ( $op eq '!:' ) {
-
                 if ( $prefix eq '-' ) {
 
-                    # appears to be a double negative, but necessary
-                    # to get the logic and serialization correct.
-                    # e.g. NOT foo:NULL
-                    push @buf,
-                        Lucy::Search::NOTQuery->new(
-                        negated_query => $field->nullterm_query_class->new(
-                            field => $name
-                        )
-                        );
+                    # original op was inverted above by $prefix
+                    if ( $clause->{op} eq ':' ) {
+
+                        # appears to be a double negative, but necessary
+                        # to get the logic and serialization correct.
+                        # e.g. NOT foo:NULL
+                        push @buf,
+                            Lucy::Search::NOTQuery->new(
+                            negated_query =>
+                                $field->nullterm_query_class->new(
+                                field => $name
+                                )
+                            );
+
+                    }
+                    else {
+                        # true double negative
+                        # e.g. NOT foo!:NULL
+                        push @buf,
+                            $field->anyterm_query_class->new(
+                            field => $name );
+
+                    }
+
                 }
                 else {
                     push @buf,
@@ -543,10 +565,8 @@ FIELD: for my $name (@fields) {
                 }
             }
             else {
-
                 push @buf,
                     $field->nullterm_query_class->new( field => $name );
-
             }
             next FIELD;
         }

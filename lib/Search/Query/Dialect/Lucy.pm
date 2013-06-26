@@ -56,7 +56,7 @@ methods are documented here.
 
 =head2 init
 
-Overrides base method and sets SWISH-appropriate defaults.
+Overrides base method and sets Lucy-appropriate defaults.
 Can take the following params, also available as standard attribute
 methods.
 

@@ -75,7 +75,7 @@ Defaults to L<Lucy::Search::PhraseQuery>.
 
 =item proximity_query_class
 
-Defaults to L<Lucy::Search::ProximityQuery>.
+Defaults to L<LucyX::Search::ProximityQuery>.
 
 =item wildcard_query_class
 

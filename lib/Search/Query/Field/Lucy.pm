@@ -1,25 +1,29 @@
 package Search::Query::Field::Lucy;
-use strict;
-use warnings;
-use base qw( Search::Query::Field );
+use Moo;
+extends 'Search::Query::Field';
 use Scalar::Util qw( blessed );
 
-__PACKAGE__->mk_accessors(
-    qw(
-        type
-        is_int
-        analyzer
-        range_query_class
-        term_query_class
-        phrase_query_class
-        proximity_query_class
-        wildcard_query_class
-        nullterm_query_class
-        anyterm_query_class
-        )
-);
+use namespace::sweep;
 
-our $VERSION = '0.10';
+has 'type'   => ( is => 'rw', default => sub {'char'} );
+has 'is_int' => ( is => 'rw', default => sub {0} );
+has 'analyzer' => ( is => 'rw' );    # TODO isa check
+has 'range_query_class' =>
+    ( is => 'rw', default => sub {'Lucy::Search::RangeQuery'} );
+has 'term_query_class' =>
+    ( is => 'rw', default => sub {'Lucy::Search::TermQuery'} );
+has 'phrase_query_class' =>
+    ( is => 'rw', default => sub {'Lucy::Search::PhraseQuery'} );
+has 'proximity_query_class' =>
+    ( is => 'rw', default => sub {'LucyX::Search::ProximityQuery'} );
+has 'wildcard_query_class' =>
+    ( is => 'rw', default => sub {'LucyX::Search::WildcardQuery'} );
+has 'nullterm_query_class' =>
+    ( is => 'rw', default => sub {'LucyX::Search::NullTermQuery'} );
+has 'anyterm_query_class' =>
+    ( is => 'rw', default => sub {'LucyX::Search::AnyTermQuery'} );
+
+our $VERSION = '0.190_01';
 
 =head1 NAME
 
@@ -42,7 +46,7 @@ validation and aliasing in Lucy search queries.
 This class is a subclass of Search::Query::Field. Only new or overridden
 methods are documented here.
 
-=head2 init
+=head2 BUILD
 
 Available params are also standard attribute accessor methods.
 
@@ -93,11 +97,8 @@ Defaults to L<LucyX::Search::AnyTermQuery>.
 
 =cut
 
-sub init {
+sub BUILD {
     my $self = shift;
-    $self->SUPER::init(@_);
-
-    $self->{type} ||= 'char';
 
     # numeric types
     if ( !blessed( $self->{type} ) && $self->{type} =~ m/int|date|num/ ) {
@@ -109,14 +110,6 @@ sub init {
         $self->{is_int} = 0;
     }
 
-    # class names to use when transforming a Dialect to a Lucy query
-    $self->{range_query_class}     ||= 'Lucy::Search::RangeQuery';
-    $self->{term_query_class}      ||= 'Lucy::Search::TermQuery';
-    $self->{phrase_query_class}    ||= 'Lucy::Search::PhraseQuery';
-    $self->{proximity_query_class} ||= 'LucyX::Search::ProximityQuery';
-    $self->{wildcard_query_class}  ||= 'LucyX::Search::WildcardQuery';
-    $self->{nullterm_query_class}  ||= 'LucyX::Search::NullTermQuery';
-    $self->{anyterm_query_class}   ||= 'LucyX::Search::AnyTermQuery';
 }
 
 1;

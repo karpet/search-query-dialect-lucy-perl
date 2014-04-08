@@ -1,7 +1,6 @@
 package Search::Query::Dialect::Lucy;
-use strict;
-use warnings;
-use base qw( Search::Query::Dialect::Native );
+use Moo;
+extends 'Search::Query::Dialect::Native';
 use Carp;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
@@ -19,16 +18,14 @@ use LucyX::Search::WildcardQuery;
 use LucyX::Search::NullTermQuery;
 use LucyX::Search::AnyTermQuery;
 
-our $VERSION = '0.10';
+use namespace::sweep;
 
-__PACKAGE__->mk_accessors(
-    qw(
-        wildcard
-        fuzzify
-        ignore_order_in_proximity
-        allow_single_wildcards
-        )
-);
+our $VERSION = '0.190_01';
+
+has 'wildcard'                  => ( is => 'rw', default => sub {'*'} );
+has 'fuzzify'                   => ( is => 'rw', default => sub {0} );
+has 'ignore_order_in_proximity' => ( is => 'rw', default => sub {0} );
+has 'allow_single_wildcards'    => ( is => 'rw', default => sub {0} );
 
 =head1 NAME
 
@@ -54,9 +51,9 @@ methods are documented here.
 
 =cut
 
-=head2 init
+=head2 BUILD
 
-Overrides base method and sets Lucy-appropriate defaults.
+Sets Lucy-appropriate defaults.
 Can take the following params, also available as standard attribute
 methods.
 
@@ -97,19 +94,12 @@ not match.
 
 =cut
 
-sub init {
+sub BUILD {
     my $self = shift;
-
-    $self->SUPER::init(@_);
-
-    #carp dump $self;
-    $self->{wildcard} = '*';
 
     if ( $self->{default_field} and !ref( $self->{default_field} ) ) {
         $self->{default_field} = [ $self->{default_field} ];
     }
-
-    $self->{debug} = 0 unless defined $self->{debug};
 
     return $self;
 }
@@ -271,7 +261,7 @@ sub stringify_clause {
 
     my @buf;
 NAME: for my $name (@fields) {
-        my $field = $self->_get_field($name);
+        my $field = $self->get_field($name);
 
         if ( defined $field->callback ) {
             push( @buf, $field->callback->( $field, $op, $value ) );
@@ -510,7 +500,7 @@ sub _lucy_clause {
 
     my @buf;
 FIELD: for my $name (@fields) {
-        my $field = $self->_get_field($name);
+        my $field = $self->get_field($name);
 
         if ( defined $field->callback ) {
             push( @buf, $field->callback->( $field, $op, $value ) );

@@ -21,7 +21,7 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'                   => 0,
-        'Search::Query'                => 0.22,
+        'Search::Query'                => 0.290_01,
         'Lucy'                         => 0.001000,
         'LucyX::Search::WildcardQuery' => 0.01,
         'LucyX::Search::NullTermQuery' => 0.002,

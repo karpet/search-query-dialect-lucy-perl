@@ -23,7 +23,7 @@ has 'nullterm_query_class' =>
 has 'anyterm_query_class' =>
     ( is => 'rw', default => sub {'LucyX::Search::AnyTermQuery'} );
 
-our $VERSION = '0.190_01';
+our $VERSION = '0.190_02';
 
 =head1 NAME
 
@@ -101,7 +101,11 @@ sub BUILD {
     my $self = shift;
 
     # numeric types
-    if ( !blessed( $self->{type} ) && $self->{type} =~ m/int|date|num/ ) {
+    if (   exists $self->{type}
+        && defined $self->{type}
+        && !blessed( $self->{type} )
+        && $self->{type} =~ m/int|date|num/ )
+    {
         $self->{is_int} = 1;
     }
 

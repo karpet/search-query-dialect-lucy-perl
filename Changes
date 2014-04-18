@@ -1,4 +1,7 @@
-Revision history for Search-Query-Dialect-KSx
+Revision history for Search-Query-Dialect-Lucy
+
+0.190_02 18 April 2014
+ - fix Makefile.PL to list Moo explicitly, bump to S::Q 0.300
 
 0.190_01 08 April 2014
  - switch to Moo in support of latest Search::Query

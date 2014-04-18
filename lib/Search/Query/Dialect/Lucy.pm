@@ -20,7 +20,7 @@ use LucyX::Search::AnyTermQuery;
 
 use namespace::sweep;
 
-our $VERSION = '0.190_01';
+our $VERSION = '0.190_02';
 
 has 'wildcard'                  => ( is => 'rw', default => sub {'*'} );
 has 'fuzzify'                   => ( is => 'rw', default => sub {0} );

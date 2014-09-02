@@ -1,5 +1,8 @@
 Revision history for Search-Query-Dialect-Lucy
 
+0.201  01 Sept 2014
+ - bump deps for Lucy 0.4.0
+
 0.200  21 April 2014
  - official Moo release to support S::Q 0.300
 

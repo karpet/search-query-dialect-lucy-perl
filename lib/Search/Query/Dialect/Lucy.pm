@@ -20,7 +20,7 @@ use LucyX::Search::AnyTermQuery;
 
 use namespace::sweep;
 
-our $VERSION = '0.201';
+our $VERSION = '0.202';
 
 has 'wildcard'                  => ( is => 'rw', default => sub {'*'} );
 has 'fuzzify'                   => ( is => 'rw', default => sub {0} );
@@ -33,10 +33,33 @@ Search::Query::Dialect::Lucy - Lucy query dialect
 
 =head1 SYNOPSIS
 
- my $query = Search::Query->parser( dialect => 'Lucy' )->parse('foo');
- print $query;
- my $lucy_query = $query->as_lucy_query();
- my $hits = $lucy_searcher->hits( query => $lucy_query );
+ use Lucy;
+ use Search::Query;
+ 
+ my ($idx, $query) = get_index_name_and_query();
+ 
+ my $searcher = Lucy::Search::IndexSearcher->new( index => $idx );
+ my $schema   = $searcher->get_schema();
+ 
+ # build field mapping
+ my %fields;
+ for my $field_name ( @{ $schema->all_fields() } ) { 
+     $fields{$field_name} = { 
+         type     => $schema->fetch_type($field_name),
+         analyzer => $schema->fetch_analyzer($field_name),
+     };  
+ }
+ 
+ my $query_parser = Search::Query->parser(
+     dialect        => 'Lucy',
+     croak_on_error => 1,
+     default_field  => 'foo',  # applied to "bare" terms with no field
+     fields         => \%fields
+ );
+ 
+ my $parsed_query = $query_parser->parse($query);
+ my $lucy_query   = $parsed_query->as_lucy_query();
+ my $hits         = $searcher->hits( query => $lucy_query );
 
 =head1 DESCRIPTION
 

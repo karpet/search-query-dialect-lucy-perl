@@ -1,5 +1,8 @@
 Revision history for Search-Query-Dialect-Lucy
 
+0.202 xxx
+ - add more example code to SYNOPSIS
+
 0.201  01 Sept 2014
  - bump deps for Lucy 0.4.0
 

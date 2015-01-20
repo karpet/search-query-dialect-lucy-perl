@@ -23,7 +23,7 @@ has 'nullterm_query_class' =>
 has 'anyterm_query_class' =>
     ( is => 'rw', default => sub {'LucyX::Search::AnyTermQuery'} );
 
-our $VERSION = '0.201';
+our $VERSION = '0.202';
 
 =head1 NAME
 

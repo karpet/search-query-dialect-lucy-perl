@@ -3,7 +3,7 @@ use Moo;
 extends 'Search::Query::Field';
 use Scalar::Util qw( blessed );
 
-use namespace::sweep;
+use namespace::autoclean;
 
 has 'type'   => ( is => 'rw', default => sub {'char'} );
 has 'is_int' => ( is => 'rw', default => sub {0} );

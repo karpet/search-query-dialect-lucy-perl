@@ -18,7 +18,7 @@ use LucyX::Search::WildcardQuery;
 use LucyX::Search::NullTermQuery;
 use LucyX::Search::AnyTermQuery;
 
-use namespace::sweep;
+use namespace::autoclean;
 
 our $VERSION = '0.202';
 

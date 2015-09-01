@@ -26,6 +26,7 @@ WriteMakefile(
         'Lucy'                         => '0.001000',
         'LucyX::Search::WildcardQuery' => 0.06,
         'LucyX::Search::NullTermQuery' => 0.006,
+        'namespace::autoclean'         => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'Search-Query-Dialect-Lucy-*' },

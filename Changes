@@ -1,7 +1,8 @@
 Revision history for Search-Query-Dialect-Lucy
 
-0.202 xxx
+0.202  31 Aug 2015
  - add more example code to SYNOPSIS
+ - switch namespace::autoclean for namespace::sweep https://rt.cpan.org/Ticket/Display.html?id=106747
 
 0.201  01 Sept 2014
  - bump deps for Lucy 0.4.0
